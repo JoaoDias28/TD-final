@@ -2,38 +2,60 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [master]
+    branches: [ master ]   # ← your default branch
+  workflow_dispatch:       # manual “Run workflow” button
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+# ensure only one deployment per branch at a time
+concurrency:
+  group: "pages-${{ github.ref }}"
+  cancel-in-progress: true
+
+permissions:               # minimum required scopes
+  contents: read           # actions/checkout
+  pages:    write          # actions/deploy-pages
+  id-token: write          # OIDC for Pages
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      # Set up PNPM (fast, deterministic); switch to npm or yarn if you prefer
-      - uses: pnpm/action-setup@v2
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4        # fetch‑depth=1 by default
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
         with:
           version: 9
+          run_install: false            # we’ll install in the next step
+
+      - name: Setup Node (with cache)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Build site
-        run: pnpm run build        # Vite outputs to dist/
+        run: pnpm run build              # Vite outputs to dist/
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: dist                     # folder to publish
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    environment:                         # surfaces the live URL
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+
     steps:
       - name: Deploy to GitHub Pages
         id: deploy

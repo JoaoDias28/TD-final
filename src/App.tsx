@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { useGSAP } from "@gsap/react";   // shipped with GSAP 3.13
 import gsap from "gsap";
-import "./App.css";
+
 
 export default function App() {
   const box = useRef<HTMLDivElement>(null);
