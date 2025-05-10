@@ -3,60 +3,68 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [ master ]   # ← your default branch
-  workflow_dispatch:       # manual “Run workflow” button
+  workflow_dispatch:       # manual "Run workflow" button
 
-# ensure only one deployment per branch at a time
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 concurrency:
   group: "pages-${{ github.ref }}"
   cancel-in-progress: true
 
-permissions:               # minimum required scopes
-  contents: read           # actions/checkout
-  pages:    write          # actions/deploy-pages
-  id-token: write          # OIDC for Pages
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4        # fetch‑depth=1 by default
+        uses: actions/checkout@v4
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v2
         with:
           version: 9
-          run_install: false            # we’ll install in the next step
+          run_install: false
 
       - name: Setup Node (with cache)
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: pnpm
+          cache: 'pnpm'
+
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v4
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Build site
-        run: pnpm run build              # Vite outputs to dist/
+        run: pnpm run build
+        env:
+          # This ensures Vite builds with the correct base URL for GitHub Pages
+          VITE_BASE_URL: ${{ steps.pages.outputs.base_path }}
 
-      - name: Upload Pages artifact
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist                     # folder to publish
+          path: dist
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment:                         # surfaces the live URL
+    environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-    permissions:
-      pages: write
-      id-token: write
-
+      url: ${{ steps.deployment.outputs.page_url }}
+    
     steps:
       - name: Deploy to GitHub Pages
-        id: deploy
+        id: deployment
         uses: actions/deploy-pages@v4

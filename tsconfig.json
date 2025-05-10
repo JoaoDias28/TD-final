@@ -3,5 +3,17 @@
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
-  ]
+  ],
+  
+    "compilerOptions": {
+      "jsx": "react-jsx",
+      "strict": true,
+      "module": "Preserve",
+      "moduleResolution": "bundler",
+      "allowSyntheticDefaultImports": true, // needed for imagesloaded CJS import
+      "types": ["vite/client","vite-imagetools"],             // plus your custom *.d.ts
+     
+    },
+  
+  
 }
