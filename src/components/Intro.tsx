@@ -61,7 +61,6 @@ export default function Intro({
   themes,
   swapEvery = 1.8,
   lifespan = 4.5,
-  columnWidthClass = 'w-1/3',
   carouselLoopDuration = 12,
   visibleColumns = 3,
   containerRef,
@@ -151,14 +150,14 @@ export default function Intro({
       
       // Get dimensions
       const columnMargin = 10; // Small margin in pixels between columns
-      const totalMarginSpace = columnMargin * (visibleColumns - 1);
+
       const containerWidth = container.offsetWidth;
       const columnWidth = containerWidth / visibleColumns;
       
       // Create columns
       const columnElements: HTMLDivElement[] = [];
       
-      allColumnsData.forEach(({ id, frames, title }, idx) => {
+      allColumnsData.forEach(({ frames, title }, idx) => {
         // Create column element
         const column = document.createElement('div');
         column.className = 'intro-column';

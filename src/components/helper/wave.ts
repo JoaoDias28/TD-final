@@ -1,6 +1,4 @@
 // wave.ts ------------------------------------------------------------------
-// wave.ts ------------------------------------------------------------------
-import { gsap } from 'gsap';
 
 export function addWavePulse(
   tl: gsap.core.Timeline,
