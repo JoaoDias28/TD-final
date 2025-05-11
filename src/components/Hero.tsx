@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, type JSX } from 'react';
+import { useRef, type JSX } from 'react';
 import { gsap } from 'gsap';
 import { useGSAP } from '@gsap/react';
 import Logo from '../assets/intro/logo.svg?react';
