@@ -15,7 +15,7 @@ declare module '*?format=*&as=picture*' {
     const content: Picture;
     export default content;
   }
-  declare module '*?format=webp;png&as=picture&sizes=auto' {
+  declare module '*?format=avif;webp;png&as=picture&sizes=auto' {
     import type { Picture } from 'vite-imagetools';
     const content: Picture;
     export default content;
