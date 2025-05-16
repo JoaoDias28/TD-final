@@ -1,294 +1,433 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { gsap } from "gsap";
-import { useGSAP } from "@gsap/react";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { TextPlugin } from "gsap/TextPlugin";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import type { Picture } from "vite-imagetools";
-import Logo from "../../assets/intro/logo.svg?react";
+import { SplitText } from "gsap/SplitText";
+import { useGSAP } from "@gsap/react";
+import Navbar from "../navigation/Navbar";
+import MarqueeSection from "./sections/MarqueeSection";
 
-// Helper function to get image URL from Picture object or string
-const getImageUrl = (image: string | Picture): string => {
-  if (typeof image === "string") return image;
-  return image.img?.src || "";
-};
-
-// Define types for props
-interface HeroProps {
-  themes: Record<string, (string | Picture)[]>;
-  activeTheme: string;
-  setActiveTheme: (theme: string) => void;
-  navLogoRef: React.RefObject<SVGSVGElement | null>;
-  introComplete: boolean;
+// Register GSAP plugins safely
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger, TextPlugin, SplitText, ScrollToPlugin);
 }
 
-const Hero: React.FC<HeroProps> = ({
-  themes,
-  activeTheme,
-  setActiveTheme,
-  navLogoRef,
-  introComplete,
-}) => {
-  const mainRef = useRef<HTMLDivElement>(null);
-  const imageGridRef = useRef<HTMLDivElement>(null);
+// Define SVG paths for desktop and mobile
+const SVG_PATH_DESKTOP = "M 100 150 Q 300 250, 500 200 T 800 300 L 850 700 Q 700 900, 500 1100 C 300 1300, 200 1500, 400 1800 L 450 2300 Q 600 2500, 800 2800";
+const SVG_PATH_MOBILE = "M 800 107 Q 150 200 133 331 T 344 512 T 513 827 Q 453 1099 202 1129 C 100 1350 150 1600 300 1900 L 350 2350 Q 450 2550 550 2850";
 
-  const formatThemeName = (name: string): string => {
-    return name
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
+// Percentage of the SVG path to reveal instantly on load.
+// Adjust this value (0.0 to 1.0) to control how much is initially visible.
+// For example, 0.05 means 5% of the path is drawn immediately.
+const INITIAL_PATH_REVEAL_PERCENTAGE = 0.05;
 
-  // Main content animations (Hover effects)
-  useGSAP(
-    () => {
-      if (!introComplete || !mainRef.current) return;
 
-      // Add hover effects to grid images
-      const gridImageContainers = document.querySelectorAll(
-        ".grid-image-container"
-      );
+const getImageUrl = (image: string | Picture): string => {
+  if (typeof image === "string") return image;
+  if (image && typeof image === "object") {
+    if (
+      image.sources &&
+      Array.isArray(image.sources.jpeg) &&
+      image.sources.jpeg.length > 0
+    ) {
+      return image.sources.jpeg[image.sources.jpeg.length - 1].src;
+    }
+    if (image.img?.src) return image.img.src;
+    // @ts-ignore
+    if (image.img && typeof image.img === "object" && image.img.src && typeof image.img.src === "string") {
+        // @ts-ignore
+      return image.img.src;
+    }
+  }
+  return "";
+};
 
-      gridImageContainers.forEach((container) => {
-        const image = container.querySelector(".grid-image") as HTMLElement;
-        const overlay = container.querySelector(
-          ".image-overlay"
-        ) as HTMLElement;
+interface HeroProps {
+  themes: Record<string, (string | Picture)[]>;
+  introComplete: boolean;
+  onNavClick?: (section: string) => void;
+}
 
-        if (!image || !overlay) return;
+const MAX_STACK_SIZE = 4;
+const IMAGE_CYCLE_INTERVAL = 7000;
 
-        container.addEventListener("mouseenter", () => {
-          gsap.to(image, { scale: 1.1, duration: 0.5 });
-          gsap.to(overlay, { opacity: 0.3, duration: 0.3 });
-        });
+const targetImagePositions = [
+  { x: 0, y: -15, z: 0, rot: -4 },
+  { x: 45, y: 25, z: -70, rot: 6 },
+  { x: -50, y: -35, z: -140, rot: -7 },
+  { x: 25, y: 55, z: -210, rot: 5 },
+];
 
-        container.addEventListener("mouseleave", () => {
-          gsap.to(image, { scale: 1, duration: 0.5 });
-          gsap.to(overlay, { opacity: 0, duration: 0.3 });
-        });
+const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
+  const mainContainerRef = useRef<HTMLDivElement>(null);
+  const heroSectionRef = useRef<HTMLDivElement>(null);
+  const textContentRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const diagonalScrollRef = useRef<HTMLDivElement>(null);
+  const rightImageStackRef = useRef<HTMLDivElement>(null);
+  const scrollIndicatorRef = useRef<HTMLDivElement>(null);
+  const decorativeBlob1Ref = useRef<HTMLDivElement>(null);
+  const decorativeBlob2Ref = useRef<HTMLDivElement>(null);
+  const svgPathRef = useRef<SVGPathElement>(null);
+
+  const imageItemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const nextImageToShowMasterIndexRef = useRef(0);
+  const [imageCycleTrigger, setImageCycleTrigger] = useState(0);
+
+  const [isLoaded, setIsLoaded] = useState(false);
+  const mouseMoveHandlerRef = useRef<((e: MouseEvent) => void) | null>(null);
+
+  const cycleIntervalIdRef = useRef<number | null>(null);
+  const cycledImageCountRef = useRef(0);
+  const hasCompletedFullCycleRef = useRef(false);
+
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
+    const handleChange = () => setIsDesktop(mediaQuery.matches);
+    handleChange();
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  const allImages = Object.values(themes)
+    .flat()
+    .map(getImageUrl)
+    .filter(Boolean);
+
+  const numImagesToDisplayInStack = Math.min(MAX_STACK_SIZE, allImages.length);
+  const initialStackImageUrls = allImages.slice(0, numImagesToDisplayInStack);
+
+  useEffect(() => {
+    if (allImages.length === 0) {
+      setIsLoaded(true);
+      return;
+    }
+    let isMounted = true;
+    const imagePromises = allImages.map((url) => {
+      return new Promise<void>((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+        img.src = url;
       });
-    },
-    { scope: mainRef, dependencies: [introComplete] }
-  );
+    });
+    Promise.all(imagePromises).then(() => { if(isMounted) setIsLoaded(true); });
+    const timeoutId = setTimeout(() => { if (!isLoaded && isMounted) setIsLoaded(true); }, 5000);
+    return () => { isMounted = false; clearTimeout(timeoutId); };
+  }, [allImages, isLoaded]);
 
-  // Theme switching animation
+  useEffect(() => {
+    if (!introComplete || allImages.length === 0) {
+      hasCompletedFullCycleRef.current = false;
+      cycledImageCountRef.current = 0;
+      if (cycleIntervalIdRef.current !== null) {
+        clearInterval(cycleIntervalIdRef.current);
+        cycleIntervalIdRef.current = null;
+      }
+    }
+  }, [introComplete, allImages.length]);
+
+  useEffect(() => {
+    if (cycleIntervalIdRef.current !== null) {
+      clearInterval(cycleIntervalIdRef.current);
+      cycleIntervalIdRef.current = null;
+    }
+    if (!isLoaded || !introComplete || allImages.length <= numImagesToDisplayInStack || numImagesToDisplayInStack < 2 || hasCompletedFullCycleRef.current) {
+      return;
+    }
+    cycleIntervalIdRef.current = window.setInterval(() => {
+      if (hasCompletedFullCycleRef.current) {
+        if (cycleIntervalIdRef.current !== null) clearInterval(cycleIntervalIdRef.current);
+        cycleIntervalIdRef.current = null;
+        return;
+      }
+      setImageCycleTrigger(prev => prev + 1);
+    }, IMAGE_CYCLE_INTERVAL);
+    return () => { if (cycleIntervalIdRef.current !== null) clearInterval(cycleIntervalIdRef.current); };
+  }, [isLoaded, introComplete, allImages.length, numImagesToDisplayInStack]);
+
+  const applyFloatingAnimations = useCallback((elementsToAnimate: (HTMLDivElement | null)[]) => {
+    const validElements = elementsToAnimate.filter(Boolean) as HTMLDivElement[];
+    gsap.killTweensOf(validElements, "floating");
+    validElements.forEach((el) => {
+      if (!el || !el.dataset.stackIndex) return;
+      const stackIndex = parseInt(el.dataset.stackIndex, 10);
+      const basePos = targetImagePositions[stackIndex];
+      if (!basePos) return;
+      gsap.to(el, {
+        y: basePos.y + (stackIndex % 2 === 0 ? (6 + Math.random()*4) : (-6 - Math.random()*4)),
+        rotation: basePos.rot + (Math.random() * 2 - 1),
+        duration: 4 + Math.random() * 2,
+        repeat: -1, yoyo: true, ease: "sine.inOut", tags: "floating",
+      });
+    });
+  }, []);
+
   useGSAP(
     () => {
-      if (!introComplete || !imageGridRef.current) return;
+      if (!introComplete || !isLoaded || typeof window === "undefined" || !heroSectionRef.current || !mainContainerRef.current) return;
 
-      const titleElement = document.querySelector(".theme-title");
+      const tl = gsap.timeline({ defaults: { ease: "power3.out", duration: 1 }});
+      tl.to(heroSectionRef.current, { opacity: 1, visibility: "visible", duration: 0.5 });
+
+      if (titleRef.current) {
+        const splitTitle = new SplitText(titleRef.current, { type: "chars, words" });
+        gsap.set(titleRef.current, { visibility: "visible" });
+        tl.from(splitTitle.chars, { opacity: 0, y: 60, rotateX: -45, stagger: 0.03, duration: 0.8 }, "-=0.2");
+      }
       
-      // Clear existing grid images
-      const tl = gsap.timeline();
-      tl.to(
-        imageGridRef.current.querySelectorAll(".grid-image"),
-        {
-          opacity: 0,
-          y: 20,
-          scale: 0.9,
-          stagger: { each: 0.05, grid: [3, 3], from: "center" },
-          duration: 0.4,
-          ease: "power2.in",
+      if (rightImageStackRef.current && heroSectionRef.current && numImagesToDisplayInStack > 0) {
+        const stackElements = imageItemRefs.current.filter(Boolean) as HTMLDivElement[];
+        stackElements.forEach((el, index) => {
+          el.dataset.stackIndex = String(index); 
+          const initialPos = targetImagePositions[index];
+          gsap.set(el, {
+            x: initialPos.x + (index % 2 === 0 ? 250 : -250), y: initialPos.y + (index % 2 === 0 ? -200 : 200),
+            rotation: initialPos.rot + (index % 2 === 0 ? 45 : -45), scale: 0.3, opacity: 0,
+            zIndex: MAX_STACK_SIZE - index, transformOrigin: "center center",
+          });
+        });
+        tl.to(stackElements, {
+          opacity: 1, scale: 1, x: i => targetImagePositions[i]?.x || 0, y: i => targetImagePositions[i]?.y || 0,
+          z: i => targetImagePositions[i]?.z || 0, rotation: i => targetImagePositions[i]?.rot || 0,
+          stagger: { amount: 0.7, from: "end", ease: "power2.out" }, duration: 1.4,
+        }, "-=0.7");
+        tl.call(() => applyFloatingAnimations(stackElements), [], ">-0.5");
+        nextImageToShowMasterIndexRef.current = numImagesToDisplayInStack % allImages.length;
+        if (allImages.length === 0) nextImageToShowMasterIndexRef.current = 0;
+
+        const heroElementForParallax = heroSectionRef.current;
+        mouseMoveHandlerRef.current = (e: MouseEvent) => {
+          if (!heroElementForParallax) return;
+          const rect = heroElementForParallax.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left; const mouseY = e.clientY - rect.top;
+          const centerX = rect.width / 2; const centerY = rect.height / 2;
+          const dX = (mouseX - centerX) * 0.025; const dY = (mouseY - centerY) * 0.025;
+          const currentElementsInStackOrder = imageItemRefs.current.filter(Boolean) as HTMLDivElement[];
+          gsap.to(currentElementsInStackOrder, {
+            x: (_, targetEl) => { const sIdx = parseInt(targetEl.dataset.stackIndex || "0", 10); return (targetImagePositions[sIdx]?.x || 0) + dX * ((MAX_STACK_SIZE - sIdx) * 0.25 + 0.5); },
+            y: (_, targetEl) => { const sIdx = parseInt(targetEl.dataset.stackIndex || "0", 10); return (targetImagePositions[sIdx]?.y || 0) + dY * ((MAX_STACK_SIZE - sIdx) * 0.25 + 0.5); },
+            rotation: (_, targetEl) => { const sIdx = parseInt(targetEl.dataset.stackIndex || "0", 10); return (targetImagePositions[sIdx]?.rot || 0) + dX * (sIdx % 2 === 0 ? -0.06 : 0.06) * ((MAX_STACK_SIZE - sIdx) * 0.15 + 0.4); },
+            duration: 0.8, ease: "power2.out", overwrite: "auto", tags: "parallax"
+          });
+        };
+        heroElementForParallax.addEventListener("mousemove", mouseMoveHandlerRef.current);
+      }
+
+       if (diagonalScrollRef.current) {
+        const marqueeItems = gsap.utils.toArray<HTMLDivElement>(diagonalScrollRef.current.querySelectorAll(".diagonal-item"));
+        tl.from(diagonalScrollRef.current, { opacity: 0, duration: 1.2, ease: "power3.inOut",}, "-=0.8");
+        gsap.from(marqueeItems, { opacity: 0, y: 50, stagger: 0.1, delay: tl.duration() - 1.2, duration: 0.8, });
+        const marqueeContent = diagonalScrollRef.current.querySelector(".marquee-inner") as HTMLDivElement;
+        if (marqueeContent) {
+           const contentWidth = marqueeContent.scrollWidth / 2;
+           if (contentWidth > 0) { gsap.set(marqueeContent, { x: 0 }); gsap.to(marqueeContent, { x: `-${contentWidth}px`, duration: 30, repeat: -1, ease: "none",}); }
         }
-      )
-        .to(
-          titleElement,
-          {
-            opacity: 0,
-            y: -20,
-            duration: 0.3,
-            ease: "power2.in",
+      }
+      if (decorativeBlob1Ref.current && decorativeBlob2Ref.current) {
+        tl.from([decorativeBlob1Ref.current, decorativeBlob2Ref.current], { opacity: 0, scale: 0.5, duration: 1.5, stagger: 0.3,}, "-=1");
+        gsap.to(decorativeBlob1Ref.current, { yPercent: -30, ease: "none", scrollTrigger: { trigger: heroSectionRef.current, start: "top top", end: "bottom top", scrub: 1.5,},});
+        gsap.to(decorativeBlob2Ref.current, { yPercent: 20, ease: "none", scrollTrigger: { trigger: heroSectionRef.current, start: "top top", end: "bottom top", scrub: 1,},});
+      }
+      if (scrollIndicatorRef.current) {
+        tl.fromTo(scrollIndicatorRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: "elastic.out(1, 0.75)" },"-=0.3");
+        const bounceDot = scrollIndicatorRef.current.querySelector(".scroll-bounce-dot");
+        if (bounceDot) gsap.to(bounceDot, { y: "0.75rem", repeat: -1, yoyo: true, ease: "sine.inOut", duration: 0.6,});
+      }
+      if (textContentRef.current && heroSectionRef.current) {
+        ScrollTrigger.create({ trigger: heroSectionRef.current, start: "top top", end: "bottom top", pin: textContentRef.current, pinSpacing: false,});
+      }
+
+      if (svgPathRef.current && mainContainerRef.current) {
+        const path = svgPathRef.current;
+        const length = path.getTotalLength();
+
+        // Set initial state: a small portion of the path is already drawn
+        gsap.set(path, {
+          strokeDasharray: length,
+          strokeDashoffset: length * (1 - INITIAL_PATH_REVEAL_PERCENTAGE) // e.g., if 0.05, offset is 0.95 * length
+        });
+        
+        // Animate the rest of the path on scroll
+        gsap.to(path, {
+          strokeDashoffset: 0, // Animate to fully drawn
+          ease: "none",
+          scrollTrigger: {
+            trigger: mainContainerRef.current,
+            start: "top top", // Animation of the *rest* of the path starts when main container top hits viewport top
+            end: "bottom bottom",
+            scrub: 1,
           },
-          "-=0.2"
-        )
-        .call(() => {
-          if (titleElement) {
-            titleElement.textContent = formatThemeName(activeTheme);
-          }
-        })
-        .fromTo(
-          titleElement,
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }
-        )
-        .fromTo(
-          imageGridRef.current.querySelectorAll(".grid-image"),
-          { opacity: 0, scale: 0.9, y: 20 },
-          {
-            opacity: 1,
-            scale: 1,
-            y: 0,
-            stagger: { each: 0.08, grid: [3, 3], from: "center" },
-            duration: 0.6,
-            ease: "back.out(1.7)",
-          },
-          "-=0.3"
-        );
-    },
-    { scope: mainRef, dependencies: [activeTheme, introComplete] }
+        });
+      }
+
+      return () => {
+        if (heroSectionRef.current && mouseMoveHandlerRef.current) {
+          heroSectionRef.current.removeEventListener("mousemove", mouseMoveHandlerRef.current);
+        }
+      };
+    }, { 
+        scope: mainContainerRef, 
+        dependencies: [ introComplete, isLoaded, numImagesToDisplayInStack, applyFloatingAnimations, isDesktop ] 
+    }
   );
 
-  const handleThemeChange = (theme: string) => {
-    setActiveTheme(theme);
-  };
+  useGSAP(() => {
+    if (!introComplete || !isLoaded || imageCycleTrigger === 0 || numImagesToDisplayInStack < 2 || allImages.length <= numImagesToDisplayInStack || hasCompletedFullCycleRef.current) {
+      return;
+    }
+    const currentElementsInStack = imageItemRefs.current.filter(Boolean) as HTMLDivElement[];
+    if (currentElementsInStack.length !== numImagesToDisplayInStack || !rightImageStackRef.current) return;
+    const frontElement = currentElementsInStack.find(el => parseInt(el.dataset.stackIndex || "-1", 10) === 0);
+    if (!frontElement) return;
+
+    const newImageURLForBack = allImages[nextImageToShowMasterIndexRef.current];
+    const cycleTl = gsap.timeline();
+
+    if (heroSectionRef.current && mouseMoveHandlerRef.current) heroSectionRef.current.removeEventListener("mousemove", mouseMoveHandlerRef.current);
+    gsap.killTweensOf(currentElementsInStack, "parallax,floating");
+
+    const backTargetPos = targetImagePositions[numImagesToDisplayInStack - 1];
+    cycleTl.to(frontElement, {
+      x: backTargetPos.x, y: backTargetPos.y, z: backTargetPos.z - 60, 
+      rotation: backTargetPos.rot, opacity: 0.5, scale: 0.75, duration: 0.8, ease: "power2.inOut",
+    });
+    currentElementsInStack.forEach(el => {
+      if (el === frontElement) return;
+      const currentStackIdx = parseInt(el.dataset.stackIndex || "0", 10);
+      const newStackIdx = currentStackIdx - 1;
+      if (newStackIdx >= 0 && targetImagePositions[newStackIdx]) {
+        cycleTl.to(el, { ...targetImagePositions[newStackIdx], duration: 0.8, ease: "power2.inOut" }, "<");
+      }
+    });
+    cycleTl.call(() => {
+      const imgTag = frontElement.querySelector('img');
+      if (imgTag && newImageURLForBack) { imgTag.src = newImageURLForBack; imgTag.alt = `Showcase content ${nextImageToShowMasterIndexRef.current + 1}`; }
+      if (allImages.length > numImagesToDisplayInStack) cycledImageCountRef.current += 1;
+      nextImageToShowMasterIndexRef.current = (nextImageToShowMasterIndexRef.current + 1) % allImages.length;
+      const newOrderedElements: HTMLDivElement[] = new Array(numImagesToDisplayInStack);
+      currentElementsInStack.forEach(el => {
+        let newIndex = (el === frontElement) ? numImagesToDisplayInStack - 1 : parseInt(el.dataset.stackIndex || "0", 10) - 1;
+        el.dataset.stackIndex = String(newIndex);
+        el.style.zIndex = String(MAX_STACK_SIZE - newIndex);
+        if (newIndex >= 0 && newIndex < numImagesToDisplayInStack) newOrderedElements[newIndex] = el;
+      });
+      imageItemRefs.current = newOrderedElements.filter(Boolean);
+      applyFloatingAnimations(imageItemRefs.current);
+      if (heroSectionRef.current && mouseMoveHandlerRef.current) heroSectionRef.current.addEventListener("mousemove", mouseMoveHandlerRef.current);
+      const uniqueImagesToCycleThrough = allImages.length - numImagesToDisplayInStack;
+      if (allImages.length > numImagesToDisplayInStack && cycledImageCountRef.current >= uniqueImagesToCycleThrough) {
+          if (!hasCompletedFullCycleRef.current) { 
+            hasCompletedFullCycleRef.current = true;
+            if (cycleIntervalIdRef.current !== null) { clearInterval(cycleIntervalIdRef.current); cycleIntervalIdRef.current = null; }
+          }
+      }
+    });
+    cycleTl.to(frontElement, { ...backTargetPos, opacity: 1, scale: 1, duration: 0.7, ease: "power2.out", }, ">-0.2");
+  }, { dependencies: [imageCycleTrigger, introComplete, isLoaded, allImages.length, numImagesToDisplayInStack, applyFloatingAnimations], scope: rightImageStackRef });
+
+  const handleNavClick = (section: string) => { onNavClick?.(section); };
+  useEffect(() => { imageItemRefs.current = imageItemRefs.current.slice(0, numImagesToDisplayInStack); }, [numImagesToDisplayInStack]);
 
   return (
-    <div ref={mainRef} className="min-h-screen">
-      {/* Header */}
-      <header className="main-header fixed top-0 left-0 right-0 z-40 bg-black bg-opacity-80 backdrop-blur-sm">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="text-2xl font-bold flex items-center">
-            <Logo ref={navLogoRef} className="h-16 w-16 mr-2" />
-          </div>
-          <nav className="hidden md:flex space-x-8">
-            <a
-              href="#"
-              className="nav-items hover:text-indigo-400 transition-colors"
-            >
-              Home
-            </a>
-            <a
-              href="#"
-              className="nav-items hover:text-indigo-400 transition-colors"
-            >
-              About
-            </a>
-            <a
-              href="#"
-              className="nav-items hover:text-indigo-400 transition-colors"
-            >
-              Services
-            </a>
-            <a
-              href="#"
-              className="nav-items hover:text-indigo-400 transition-colors"
-            >
-              Contact
-            </a>
-          </nav>
-          <button className="md:hidden">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              ></path>
-            </svg>
-          </button>
-        </div>
-      </header>
+    <>
+      <Navbar introComplete={introComplete} onNavClick={handleNavClick} />
+      <div ref={mainContainerRef} className="relative">
+        <svg 
+          viewBox="-100 100 1000 3000" 
+          preserveAspectRatio="xMidYMin slice"
+          className="absolute top-0 left-0 w-full h-full pointer-events-none z-[5]"
+          style={{ height: "500vh" , width: "100vw"}}
+        >
+          <path
+            ref={svgPathRef}
+            d={isDesktop ? SVG_PATH_DESKTOP : SVG_PATH_MOBILE}
+            stroke="rgba(239, 68, 68, 0.8)" 
+            strokeWidth="6"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
 
-      {/* Main Section */}
-      <section className="main-content-section min-h-screen pt-24 pb-12 px-6">
-        <div className="container mx-auto">
-          <div className="mb-12 flex flex-wrap gap-4 justify-center">
-            {Object.keys(themes).map((theme) => (
-              <button
-                key={theme}
-                onClick={() => handleThemeChange(theme)}
-                className={`theme-nav-item px-4 py-2 rounded-full transition-all duration-300 ${
-                  activeTheme === theme
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                }`}
-              >
-                {formatThemeName(theme)}
-              </button>
-            ))}
-          </div>
-
-          <h2 className="theme-title text-3xl md:text-4xl font-bold text-center mb-12">
-            {formatThemeName(activeTheme)}
-          </h2>
-
+        <section
+          ref={heroSectionRef}
+          id="top"
+          className="relative w-full min-h-screen flex flex-col md:flex-row items-center justify-center bg-gradient-to-br from-[#0a0a0a] via-[#101010] to-[#181818] overflow-hidden opacity-0 invisible pt-0 md:pt-0 pb-48"
+          style={{ willChange: "opacity, transform" }}
+        >
           <div
-            ref={imageGridRef}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            ref={textContentRef}
+            className="w-full md:w-1/2 flex flex-col justify-center items-start p-8 md:pl-16 lg:pl-24 xl:pl-32 z-20 relative"
           >
-            {themes[activeTheme].map((image, index) => (
-              <div
-                key={`${activeTheme}-${index}`}
-                className="grid-image-container relative aspect-square overflow-hidden rounded-lg shadow-lg cursor-pointer"
-              >
-                <div className="image-overlay absolute inset-0 bg-indigo-900 opacity-0 transition-opacity duration-300 z-10"></div>
-                <img
-                  src={getImageUrl(image)}
-                  alt={`${formatThemeName(activeTheme)} ${index + 1}`}
-                  className="grid-image w-full h-full object-cover transition-transform duration-500"
-                />
-              </div>
-            ))}
+            <h1
+              ref={titleRef}
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-white leading-tight invisible"
+            >
+              Construimos <br />
+              <span className="text-red-500">oportunidades</span>
+            </h1>
           </div>
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="main-content-section py-16 px-6 bg-gradient-to-r from-indigo-900 to-purple-900">
-        <div className="container mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Ready to Start Your Project?
-          </h2>
-          <p className="max-w-2xl mx-auto mb-8 text-lg">
-            Let's create something amazing together. Our team is ready to bring
-            your vision to life.
-          </p>
-          <button className="px-8 py-3 bg-white text-indigo-900 font-bold rounded-full hover:bg-gray-100 transition-colors duration-300 transform hover:scale-105">
-            Contact Us
-          </button>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="main-content-section py-12 px-6 bg-black">
-        <div className="container mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="text-xl font-bold mb-4">Company Name</h3>
-              <p className="text-gray-400">
-                Creating exceptional experiences through innovative design and
-                craftsmanship.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-4">Contact</h3>
-              <p className="text-gray-400">Email: info@company.com</p>
-              <p className="text-gray-400">Phone: +1 (123) 456-7890</p>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-4">Follow Us</h3>
-              <div className="flex space-x-4">
-                {/* Replace with actual icons */}
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  [FB Icon]
-                </a>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  [IG Icon]
-                </a>
-                <a
-                  href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  [TW Icon]
-                </a>
+          <div className="w-full md:w-1/2 h-[50vh] md:h-screen flex items-center justify-center md:justify-start z-10 p-4 md:p-0">
+            {isLoaded ? (
+            <div
+            ref={rightImageStackRef}
+            className="
+              relative
+              w-[300px] h-[200px]
+              sm:w-[480px] sm:h-[360px]
+              md:w-[560px] md:h-[420px]
+              lg:w-[600px] lg:h-[480px]
+            "
+            style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
+          >
+                {initialStackImageUrls.map((imageUrl, index) => (
+                  <div
+                    key={`img-stack-item-${index}-${imageUrl}`}
+                    ref={el => { if (el) imageItemRefs.current[index] = el; }}
+                    className="image-stack-item absolute w-full h-full overflow-hidden rounded-xl shadow-2xl border-2 border-neutral-700/60"
+                    style={{ willChange: "transform, opacity", zIndex: MAX_STACK_SIZE - index }}
+                  >
+                    <img
+                      src={imageUrl}
+                      alt={`Showcase ${index + 1}`}
+                      className="w-full h-full object-cover"
+                      loading={index < 2 ? "eager" : "lazy"} 
+                    />
+                  </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              <div className="w-full h-full flex justify-center items-center">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-red-500"></div>
+              </div>
+            )}
           </div>
-          <div className="mt-8 pt-8 border-t border-gray-800 text-center text-gray-400">
-            <p>© 2025 Company Name. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
-    </div>
+          
+          <div ref={decorativeBlob1Ref} className="absolute top-1/4 left-1/4 w-72 h-72 md:w-96 md:h-96 bg-red-700/30 rounded-full filter blur-[100px] md:blur-[150px] opacity-0 z-99"></div>
+          <div ref={decorativeBlob2Ref} className="absolute bottom-1/4 right-1/4 w-72 h-72 md:w-96 md:h-96 bg-gray-600/20 rounded-full filter blur-[100px] md:blur-[150px] opacity-0 z-0"></div>
+
+        
+        </section>
+
+       <MarqueeSection />
+
+        <section 
+          id="contact" 
+          className="relative min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-[#1f1f1f] to-[#0f0f0f] pt-24 pb-40 z-20"
+          style={{paddingBottom: "calc(10rem + 14px + 3.5rem)" }}
+        >
+          <h2 className="text-5xl md:text-6xl font-bold text-white opacity-80 mb-4 text-center">Contacto</h2>
+          <p className="text-lg md:text-xl text-gray-400 text-center max-w-xl">Información de contacto en desarrollo.</p>
+        </section>
+      </div>
+    </>
   );
 };
 

@@ -17,14 +17,11 @@ const LandingPage: React.FC<LandingPageProps> = ({
 }) => {
   // Shared state
   const [introComplete, setIntroComplete] = useState<boolean>(false);
-  const [activeTheme, setActiveTheme] = useState<string>(
-    Object.keys(themes)[0],
-  );
-  
+
   // Shared refs
   const mainRef = useRef<HTMLDivElement>(null);
   const navLogoRef = useRef<SVGSVGElement>(null);
-  
+
   // Use allImages for intro if provided, otherwise fall back to assetUrls
   const introImages = allImages || assetUrls;
 
@@ -40,13 +37,7 @@ const LandingPage: React.FC<LandingPageProps> = ({
       />
 
       {/* Hero Component */}
-      <Hero
-        themes={themes}
-        activeTheme={activeTheme}
-        setActiveTheme={setActiveTheme}
-        navLogoRef={navLogoRef}
-        introComplete={introComplete}
-      />
+      <Hero themes={themes} introComplete={introComplete} />
     </div>
   );
 };
