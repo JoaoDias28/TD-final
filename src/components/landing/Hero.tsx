@@ -8,19 +8,15 @@ import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
 import Navbar from "../navigation/Navbar";
 import MarqueeSection from "./sections/MarqueeSection";
+import HorizontalScroll from "./sections/HorizontalScroll";
 
 // Register GSAP plugins safely
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, TextPlugin, SplitText, ScrollToPlugin);
 }
 
-// Define SVG paths for desktop and mobile
-const SVG_PATH_DESKTOP = "M 100 150 Q 300 250, 500 200 T 800 300 L 850 700 Q 700 900, 500 1100 C 300 1300, 200 1500, 400 1800 L 450 2300 Q 600 2500, 800 2800";
-const SVG_PATH_MOBILE = "M 800 107 Q 150 200 133 331 T 344 512 T 513 827 Q 453 1099 202 1129 C 100 1350 150 1600 300 1900 L 350 2350 Q 450 2550 550 2850";
 
 // Percentage of the SVG path to reveal instantly on load.
-// Adjust this value (0.0 to 1.0) to control how much is initially visible.
-// For example, 0.05 means 5% of the path is drawn immediately.
 const INITIAL_PATH_REVEAL_PERCENTAGE = 0.05;
 
 
@@ -54,10 +50,10 @@ const MAX_STACK_SIZE = 4;
 const IMAGE_CYCLE_INTERVAL = 7000;
 
 const targetImagePositions = [
-  { x: 0, y: -15, z: 0, rot: -4 },
-  { x: 45, y: 25, z: -70, rot: 6 },
-  { x: -50, y: -35, z: -140, rot: -7 },
-  { x: 25, y: 55, z: -210, rot: 5 },
+  { x: 0, y: -15, z: 0, rotation: -4 },
+  { x: 45, y: 25, z: -70, rotation: 6 },
+  { x: -50, y: -35, z: -140, rotation: -7 },
+  { x: 25, y: 55, z: -210, rotation: 5 },
 ];
 
 const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
@@ -70,7 +66,6 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
   const scrollIndicatorRef = useRef<HTMLDivElement>(null);
   const decorativeBlob1Ref = useRef<HTMLDivElement>(null);
   const decorativeBlob2Ref = useRef<HTMLDivElement>(null);
-  const svgPathRef = useRef<SVGPathElement>(null);
 
   const imageItemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const nextImageToShowMasterIndexRef = useRef(0);
@@ -161,9 +156,9 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
       if (!basePos) return;
       gsap.to(el, {
         y: basePos.y + (stackIndex % 2 === 0 ? (6 + Math.random()*4) : (-6 - Math.random()*4)),
-        rotation: basePos.rot + (Math.random() * 2 - 1),
+        rotation: basePos.rotation + (Math.random() * 2 - 1),
         duration: 4 + Math.random() * 2,
-        repeat: -1, yoyo: true, ease: "sine.inOut", tags: "floating",
+        repeat: -1, yoyo: true, ease: "sine.inOut", id: `floating-${stackIndex}`, overwrite: "auto", 
       });
     });
   }, []);
@@ -188,13 +183,13 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
           const initialPos = targetImagePositions[index];
           gsap.set(el, {
             x: initialPos.x + (index % 2 === 0 ? 250 : -250), y: initialPos.y + (index % 2 === 0 ? -200 : 200),
-            rotation: initialPos.rot + (index % 2 === 0 ? 45 : -45), scale: 0.3, opacity: 0,
+            rotation: initialPos.rotation + (index % 2 === 0 ? 45 : -45), scale: 0.3, opacity: 0,
             zIndex: MAX_STACK_SIZE - index, transformOrigin: "center center",
           });
         });
         tl.to(stackElements, {
           opacity: 1, scale: 1, x: i => targetImagePositions[i]?.x || 0, y: i => targetImagePositions[i]?.y || 0,
-          z: i => targetImagePositions[i]?.z || 0, rotation: i => targetImagePositions[i]?.rot || 0,
+          z: i => targetImagePositions[i]?.z || 0, rotation: i => targetImagePositions[i]?.rotation || 0,
           stagger: { amount: 0.7, from: "end", ease: "power2.out" }, duration: 1.4,
         }, "-=0.7");
         tl.call(() => applyFloatingAnimations(stackElements), [], ">-0.5");
@@ -212,8 +207,8 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
           gsap.to(currentElementsInStackOrder, {
             x: (_, targetEl) => { const sIdx = parseInt(targetEl.dataset.stackIndex || "0", 10); return (targetImagePositions[sIdx]?.x || 0) + dX * ((MAX_STACK_SIZE - sIdx) * 0.25 + 0.5); },
             y: (_, targetEl) => { const sIdx = parseInt(targetEl.dataset.stackIndex || "0", 10); return (targetImagePositions[sIdx]?.y || 0) + dY * ((MAX_STACK_SIZE - sIdx) * 0.25 + 0.5); },
-            rotation: (_, targetEl) => { const sIdx = parseInt(targetEl.dataset.stackIndex || "0", 10); return (targetImagePositions[sIdx]?.rot || 0) + dX * (sIdx % 2 === 0 ? -0.06 : 0.06) * ((MAX_STACK_SIZE - sIdx) * 0.15 + 0.4); },
-            duration: 0.8, ease: "power2.out", overwrite: "auto", tags: "parallax"
+            rotation: (_, targetEl) => { const sIdx = parseInt(targetEl.dataset.stackIndex || "0", 10); return (targetImagePositions[sIdx]?.rotation || 0) + dX * (sIdx % 2 === 0 ? -0.06 : 0.06) * ((MAX_STACK_SIZE - sIdx) * 0.15 + 0.4); },
+            duration: 0.8, ease: "power2.out", overwrite: "auto", id: "parallaxAnimation"
           });
         };
         heroElementForParallax.addEventListener("mousemove", mouseMoveHandlerRef.current);
@@ -243,33 +238,14 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
         ScrollTrigger.create({ trigger: heroSectionRef.current, start: "top top", end: "bottom top", pin: textContentRef.current, pinSpacing: false,});
       }
 
-      if (svgPathRef.current && mainContainerRef.current) {
-        const path = svgPathRef.current;
-        const length = path.getTotalLength();
-
-        // Set initial state: a small portion of the path is already drawn
-        gsap.set(path, {
-          strokeDasharray: length,
-          strokeDashoffset: length * (1 - INITIAL_PATH_REVEAL_PERCENTAGE) // e.g., if 0.05, offset is 0.95 * length
-        });
-        
-        // Animate the rest of the path on scroll
-        gsap.to(path, {
-          strokeDashoffset: 0, // Animate to fully drawn
-          ease: "none",
-          scrollTrigger: {
-            trigger: mainContainerRef.current,
-            start: "top top", // Animation of the *rest* of the path starts when main container top hits viewport top
-            end: "bottom bottom",
-            scrub: 1,
-          },
-        });
-      }
-
+      
+        // Initial position of the follower
+      
       return () => {
         if (heroSectionRef.current && mouseMoveHandlerRef.current) {
           heroSectionRef.current.removeEventListener("mousemove", mouseMoveHandlerRef.current);
         }
+        // ScrollTriggers are automatically killed by useGSAP's cleanup
       };
     }, { 
         scope: mainContainerRef, 
@@ -290,12 +266,16 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
     const cycleTl = gsap.timeline();
 
     if (heroSectionRef.current && mouseMoveHandlerRef.current) heroSectionRef.current.removeEventListener("mousemove", mouseMoveHandlerRef.current);
-    gsap.killTweensOf(currentElementsInStack, "parallax,floating");
+    // Kill specific animations by ID or all animations on the elements
+    currentElementsInStack.forEach((el, index) => {
+      gsap.killTweensOf(el, `floating-${index},parallaxAnimation`); // Kill by specific IDs
+    });
+
 
     const backTargetPos = targetImagePositions[numImagesToDisplayInStack - 1];
     cycleTl.to(frontElement, {
       x: backTargetPos.x, y: backTargetPos.y, z: backTargetPos.z - 60, 
-      rotation: backTargetPos.rot, opacity: 0.5, scale: 0.75, duration: 0.8, ease: "power2.inOut",
+      rotation: backTargetPos.rotation, opacity: 0.5, scale: 0.75, duration: 0.8, ease: "power2.inOut",
     });
     currentElementsInStack.forEach(el => {
       if (el === frontElement) return;
@@ -338,32 +318,17 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
     <>
       <Navbar introComplete={introComplete} onNavClick={handleNavClick} />
       <div ref={mainContainerRef} className="relative">
-        <svg 
-          viewBox="-100 100 1000 3000" 
-          preserveAspectRatio="xMidYMin slice"
-          className="absolute top-0 left-0 w-full h-full pointer-events-none z-[5]"
-          style={{ height: "500vh" , width: "100vw"}}
-        >
-          <path
-            ref={svgPathRef}
-            d={isDesktop ? SVG_PATH_DESKTOP : SVG_PATH_MOBILE}
-            stroke="rgba(239, 68, 68, 0.8)" 
-            strokeWidth="6"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+      
 
         <section
           ref={heroSectionRef}
           id="top"
-          className="relative w-full min-h-screen flex flex-col md:flex-row items-center justify-center bg-gradient-to-br from-[#0a0a0a] via-[#101010] to-[#181818] overflow-hidden opacity-0 invisible pt-0 md:pt-0 pb-48"
+          className="relative w-full min-h-screen flex flex-col md:flex-row items-center justify-center overflow-hidden opacity-0 invisible pt-0 md:pt-0 pb-48"
           style={{ willChange: "opacity, transform" }}
         >
           <div
             ref={textContentRef}
-            className="w-full md:w-1/2 flex flex-col justify-center items-start p-8 md:pl-16 lg:pl-24 xl:pl-32 z-20 relative"
+            className="w-full md:w-1/2 flex flex-col justify-center items-start p-8 md:pl-16 lg:pl-24 xl:pl-32 z-20 relative" // text content above SVG path by default z-index
           >
             <h1
               ref={titleRef}
@@ -374,7 +339,7 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
             </h1>
           </div>
 
-          <div className="w-full md:w-1/2 h-[50vh] md:h-screen flex items-center justify-center md:justify-start z-10 p-4 md:p-0">
+          <div className="w-full md:w-1/2 h-[50vh] md:h-screen flex items-center justify-center md:justify-start z-10 p-4 md:p-0"> {/* Image stack potentially below SVG (z-10 vs z-5) */}
             {isLoaded ? (
             <div
             ref={rightImageStackRef}
@@ -410,22 +375,15 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
             )}
           </div>
           
-          <div ref={decorativeBlob1Ref} className="absolute top-1/4 left-1/4 w-72 h-72 md:w-96 md:h-96 bg-red-700/30 rounded-full filter blur-[100px] md:blur-[150px] opacity-0 z-99"></div>
+          <div ref={decorativeBlob1Ref} className="absolute top-1/4 left-1/4 w-72 h-72 md:w-96 md:h-96 bg-red-700/30 rounded-full filter blur-[100px] md:blur-[150px] opacity-0 z-0"></div>
           <div ref={decorativeBlob2Ref} className="absolute bottom-1/4 right-1/4 w-72 h-72 md:w-96 md:h-96 bg-gray-600/20 rounded-full filter blur-[100px] md:blur-[150px] opacity-0 z-0"></div>
 
         
         </section>
 
-       <MarqueeSection />
-
-        <section 
-          id="contact" 
-          className="relative min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-[#1f1f1f] to-[#0f0f0f] pt-24 pb-40 z-20"
-          style={{paddingBottom: "calc(10rem + 14px + 3.5rem)" }}
-        >
-          <h2 className="text-5xl md:text-6xl font-bold text-white opacity-80 mb-4 text-center">Contacto</h2>
-          <p className="text-lg md:text-xl text-gray-400 text-center max-w-xl">Información de contacto en desarrollo.</p>
-        </section>
+     
+       <HorizontalScroll />
+         <MarqueeSection />
       </div>
     </>
   );

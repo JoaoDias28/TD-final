@@ -16,9 +16,9 @@ gsap.registerPlugin(Flip);
 // Assuming these images are in your `public` folder or you'll import them
 // If in public: public/intro/images/outdoor1.png -> /intro/images/outdoor1.png
 // If in src: import outdoorImage1 from './intro/images/outdoor1.png';
-const marquee1Images = ["./intro/images/outdoor1.png"]; // Example for public folder
-const marquee2Images = ["/assets/intro/outdoor/outdoor1.png"]; // Example for public folder
-const marquee3Images = ["/assets/intro/outdoor/outdoor1.png"]; // Example for public folder
+const marquee1Images = ["./marquee/outdoor-entreOutros/outdoor1.png"]; // Example for public folder
+const marquee2Images = ["./marquee/decoracao/decEspacoBarragem.jpeg"]; // Example for public folder
+const marquee3Images = ["./marquee/stands-eventos/seasidePalcoFrente.png"]; // Example for public folder
 
 
 type MarqueeItemType = {
@@ -315,26 +315,24 @@ const pauseAllMarquees = () =>
   return (
     <section
       ref={sectionRef}
-      className="py-12 sm:py-16 bg-gray-900 text-white relative"
+      className="py-12 sm:py-16  text-white relative"
     >
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl sm:text-4xl font-bold mb-10 sm:mb-12 text-center">
-          Our Visual Showcase
-        </h2>
+       
 
         {isDesktop ? (
           // DESKTOP LAYOUT
           <div className="flex flex-col md:flex-row md:justify-around md:gap-6 lg:gap-8">
             <div className="flex-1 md:max-w-xs lg:max-w-sm mb-8 md:mb-0">
-              <h3 className="text-xl sm:text-2xl font-semibold text-gray-300 mb-4 text-center">Portfolio Highlights</h3>
+              
               <Marquee ref={marquee1Ref}   key="desktop-mq1" items={items1} direction="up" speed={50} {...commonMarqueeProps} className="h-[400px] sm:h-[500px] md:h-[600px] border border-gray-700 rounded-lg overflow-hidden"/>
             </div>
             <div className="flex-1 md:max-w-xs lg:max-w-sm mb-8 md:mb-0">
-              <h3 className="text-xl sm:text-2xl font-semibold text-gray-300 mb-4 text-center">Client Features</h3>
+
               <Marquee ref={marquee2Ref}   key="desktop-mq2" items={items2} direction="down" speed={65} {...commonMarqueeProps} className="h-[400px] sm:h-[500px] md:h-[600px] border border-gray-700 rounded-lg overflow-hidden" delay={0.2}/>
             </div>
             <div className="flex-1 md:max-w-xs lg:max-w-sm">
-              <h3 className="text-xl sm:text-2xl font-semibold text-gray-300 mb-4 text-center">Project Showcases</h3>
+          
               <Marquee ref={marquee3Ref}   key="desktop-mq3" items={items3} direction="up" speed={40} {...commonMarqueeProps} className="h-[400px] sm:h-[500px] md:h-[600px] border border-gray-700 rounded-lg overflow-hidden" delay={0.4}/>
             </div>
           </div>
@@ -342,15 +340,15 @@ const pauseAllMarquees = () =>
           // MOBILE LAYOUT
           <div>
             <div className="mb-10">
-              <h3 className="text-xl font-semibold text-gray-300 mb-4 ml-2">Portfolio Highlights</h3>
+             
               <Marquee ref={marquee1Ref} key="mobile-mq1" items={items1} direction="left" speed={70} {...commonMarqueeProps} className="h-40 sm:h-48"/>
             </div>
             <div className="mb-10">
-              <h3 className="text-xl font-semibold text-gray-300 mb-4 ml-2">Client Features</h3>
+              
               <Marquee  ref={marquee2Ref} key="mobile-mq2" items={items2} direction="right" speed={90} {...commonMarqueeProps} className="h-40 sm:h-48" delay={0.2}/>
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-gray-300 mb-4 ml-2">Project Showcases</h3>
+    
               <Marquee ref={marquee3Ref} key="mobile-mq3" items={items3} direction="left" speed={60} {...commonMarqueeProps} className="h-40 sm:h-48" delay={0.4}/>
             </div>
           </div>

@@ -38,7 +38,7 @@ const Navbar: React.FC<NavbarProps> = ({
         if (!navRef.current) return;
         
         gsap.to(navRef.current, {
-          backgroundColor: `rgba(20, 20, 20, ${Math.min(self.progress * 2, 0.9)})`,
+          backgroundColor: `rgba(0, 0, 0, ${Math.min(self.progress * 2, 0.9)})`,
           backdropFilter: `blur(${self.progress * 10}px)`,
           duration: 0.3
         });
