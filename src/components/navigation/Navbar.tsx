@@ -2,7 +2,9 @@ import React, { useRef, useEffect } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
-import Logo from "../../assets/intro/logo.svg?react";
+import logoSvg from "../../assets/intro/logo.svg";
+import { scrollManager } from "../../utils/scrollManager";
+
 // Register GSAP plugins safely (only in browser environment)
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
@@ -51,22 +53,18 @@ const Navbar: React.FC<NavbarProps> = ({
     };
   }, [introComplete]);
 
-  // Handle navigation click
+  // Handle navigation click with smooth scrolling
   const handleNavClick = (section: string) => {
     if (onNavClick) {
       onNavClick(section);
     }
     
-    // Smooth scroll to section if it exists
+    // Use scroll manager for smooth scrolling
     if (typeof window !== 'undefined' && section) {
-      const targetElement = document.getElementById(section);
-      if (targetElement) {
-        gsap.to(window, {
-          duration: 1,
-          scrollTo: `#${section}`,
-          ease: "power2.inOut"
-        });
-      }
+      scrollManager.scrollToElement(`#${section}`, {
+        duration: 1,
+        easing: (t: number) => 1 - Math.pow(1 - t, 3) // easeOutCubic
+      });
     }
   };
 
@@ -78,7 +76,7 @@ const Navbar: React.FC<NavbarProps> = ({
     >
       <div className="max-w-5xl mx-auto flex justify-between items-center">
         <div className="text-2xl font-bold text-white cursor-pointer" onClick={() => handleNavClick('top')}>
-        <Logo  className="w-24 h-24"/>
+          <img src={logoSvg} alt="Logo" className="w-24 h-24" />
         </div>
         
         {/* Navigation Links */}

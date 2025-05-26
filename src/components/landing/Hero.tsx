@@ -9,16 +9,184 @@ import { useGSAP } from "@gsap/react";
 import Navbar from "../navigation/Navbar";
 import MarqueeSection from "./sections/MarqueeSection";
 import HorizontalScroll from "./sections/HorizontalScroll";
+import { scrollManager } from "../../utils/scrollManager";
 
 // Register GSAP plugins safely
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, TextPlugin, SplitText, ScrollToPlugin);
 }
 
+// Professional Vertical Navigation Component
+interface VerticalNavProps {
+  currentSection: string;
+  onNavigate: (section: string) => void;
+  themes: Array<{ id: number; title: string; }>;
+}
 
-// Percentage of the SVG path to reveal instantly on load.
-const INITIAL_PATH_REVEAL_PERCENTAGE = 0.05;
+const VerticalNavigation: React.FC<VerticalNavProps> = ({ currentSection, onNavigate, themes }) => {
+  const navRef = useRef<HTMLDivElement>(null);
+  const pathRef = useRef<SVGPathElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
+  const navigationSections = [
+    { id: 'home', title: 'Home', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+    ...themes.map(theme => ({
+      id: `theme-${theme.id}`,
+      title: theme.title,
+      icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'
+    }))
+  ];
+
+  useEffect(() => {
+    // Show navigation after initial load
+    const timer = setTimeout(() => setIsVisible(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible || !navRef.current || !pathRef.current) return;
+
+    // Animate SVG path drawing
+    const path = pathRef.current;
+    const pathLength = path.getTotalLength();
+    
+    gsap.set(path, {
+      strokeDasharray: pathLength,
+      strokeDashoffset: pathLength
+    });
+
+    gsap.to(path, {
+      strokeDashoffset: 0,
+      duration: 2,
+      ease: 'power2.out'
+    });
+
+    // Animate navigation items
+    const navItems = navRef.current.querySelectorAll('.nav-item');
+    gsap.fromTo(navItems, 
+      { opacity: 0, x: -30, scale: 0.8 },
+      { 
+        opacity: 1, 
+        x: 0, 
+        scale: 1,
+        duration: 0.6,
+        stagger: 0.1,
+        ease: 'back.out(1.5)',
+        delay: 0.5
+      }
+    );
+  }, [isVisible]);
+
+  const handleNavClick = (sectionId: string) => {
+    onNavigate(sectionId);
+    
+    // Pulse animation on click
+    const activeItem = navRef.current?.querySelector(`[data-section="${sectionId}"]`);
+    if (activeItem) {
+      gsap.fromTo(activeItem,
+        { scale: 1 },
+        { scale: 1.15, duration: 0.1, yoyo: true, repeat: 1, ease: 'power2.out' }
+      );
+    }
+  };
+
+  if (!isVisible) return null;
+
+  return (
+    <div 
+      ref={navRef}
+      className="fixed left-6 top-1/2 transform -translate-y-1/2 z-50"
+      style={{ willChange: 'transform, opacity' }}
+    >
+      {/* Connecting SVG Path */}
+      <svg 
+        className="absolute left-6 top-0 h-full w-8 pointer-events-none"
+        style={{ transform: 'translateY(-50%)', top: '50%' }}
+      >
+        <path
+          ref={pathRef}
+          d={`M4 0 Q4 ${navigationSections.length * 60 / 4} 4 ${navigationSections.length * 60 / 2} Q4 ${navigationSections.length * 60 * 3 / 4} 4 ${navigationSections.length * 60}`}
+          stroke="rgba(255, 255, 255, 0.3)"
+          strokeWidth="2"
+          fill="none"
+          strokeLinecap="round"
+        />
+      </svg>
+
+      {/* Navigation Points */}
+      <div className="flex flex-col space-y-8">
+        {navigationSections.map((section, index) => {
+          const isActive = currentSection === section.id;
+          
+          return (
+            <div
+              key={section.id}
+              data-section={section.id}
+              className="nav-item relative group cursor-pointer"
+              onClick={() => handleNavClick(section.id)}
+            >
+              {/* Navigation Point */}
+              <div 
+                className={`
+                  w-4 h-4 rounded-full border-2 transition-all duration-300 relative z-10
+                  ${isActive 
+                    ? 'bg-red-500 border-red-500 shadow-lg shadow-red-500/50' 
+                    : 'bg-white/10 border-white/30 hover:bg-white/20 hover:border-white/50'
+                  }
+                `}
+              >
+                {/* Active indicator pulse */}
+                {isActive && (
+                  <div className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-50"></div>
+                )}
+              </div>
+
+              {/* Label Tooltip */}
+              <div 
+                className={`
+                  absolute left-8 top-1/2 transform -translate-y-1/2 
+                  bg-black/90 backdrop-blur-sm border border-white/20 rounded-lg px-4 py-2
+                  opacity-0 translate-x-2 pointer-events-none transition-all duration-300
+                  group-hover:opacity-100 group-hover:translate-x-0
+                  whitespace-nowrap z-20
+                `}
+                style={{
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    className="text-white/70"
+                  >
+                    <path d={section.icon} />
+                  </svg>
+                  <span className="text-sm font-medium text-white">
+                    {section.title}
+                  </span>
+                </div>
+                
+                {/* Arrow pointer */}
+                <div 
+                  className="absolute right-full top-1/2 transform -translate-y-1/2 
+                             border-4 border-transparent border-r-black/90"
+                ></div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 const getImageUrl = (image: string | Picture): string => {
   if (typeof image === "string") return image;
@@ -79,6 +247,17 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
   const hasCompletedFullCycleRef = useRef(false);
 
   const [isDesktop, setIsDesktop] = useState(true);
+  
+  // Navigation state management
+  const [currentSection, setCurrentSection] = useState('home');
+  
+  // Define theme sections for navigation
+  const navigationThemes = [
+    { id: 1, title: 'Outdoors' },
+    { id: 2, title: 'Feiras & Eventos' },
+    { id: 3, title: 'Decoração de Espaços' },
+    { id: 4, title: 'Projetos Criativos' }
+  ];
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -311,7 +490,81 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
     cycleTl.to(frontElement, { ...backTargetPos, opacity: 1, scale: 1, duration: 0.7, ease: "power2.out", }, ">-0.2");
   }, { dependencies: [imageCycleTrigger, introComplete, isLoaded, allImages.length, numImagesToDisplayInStack, applyFloatingAnimations], scope: rightImageStackRef });
 
-  const handleNavClick = (section: string) => { onNavClick?.(section); };
+  // Enhanced navigation handling
+  const handleNavClick = (section: string) => { 
+    onNavClick?.(section); 
+  };
+  
+  // Handle vertical navigation with smooth scrolling
+  const handleVerticalNavClick = (sectionId: string) => {
+    setCurrentSection(sectionId);
+    
+    if (sectionId === 'home') {
+      // Smooth scroll to top using scroll manager
+      scrollManager.scrollToTop({
+        duration: 1.5,
+        easing: (t: number) => 1 - Math.pow(1 - t, 3) // easeOutCubic
+      });
+    } else {
+      // Extract theme ID and scroll to that section
+      const themeId = sectionId.replace('theme-', '');
+      const targetSelector = `#theme-${themeId}`;
+      
+      // Use scroll manager for smooth element scrolling
+      scrollManager.scrollToElement(targetSelector, {
+        duration: 1.5,
+        offset: 50,
+        easing: (t: number) => 1 - Math.pow(1 - t, 3) // easeOutCubic
+      });
+      
+      // Fallback to horizontal scroll section if specific theme not found
+      if (!document.querySelector(targetSelector)) {
+        scrollManager.scrollToElement('#horizontal-scroll-section', {
+          duration: 1.5,
+          offset: 50,
+          easing: (t: number) => 1 - Math.pow(1 - t, 3)
+        });
+      }
+    }
+  };
+  
+  // Track current section based on scroll position
+  useEffect(() => {
+    if (!introComplete) return;
+    
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      
+      // Check if we're in the hero section
+      if (scrollY < windowHeight * 0.8) {
+        setCurrentSection('home');
+        return;
+      }
+      
+      // Check theme sections
+      navigationThemes.forEach(theme => {
+        const themeElement = document.querySelector(`#theme-${theme.id}`) ||
+                            document.querySelector('#horizontal-scroll-section');
+        
+        if (themeElement) {
+          const rect = themeElement.getBoundingClientRect();
+          const elementTop = rect.top + scrollY;
+          const elementHeight = rect.height;
+          
+          if (scrollY >= elementTop - windowHeight * 0.5 && 
+              scrollY < elementTop + elementHeight - windowHeight * 0.5) {
+            setCurrentSection(`theme-${theme.id}`);
+          }
+        }
+      });
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Initial check
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [introComplete, navigationThemes]);
   useEffect(() => { imageItemRefs.current = imageItemRefs.current.slice(0, numImagesToDisplayInStack); }, [numImagesToDisplayInStack]);
 
   return (
@@ -385,6 +638,11 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
        <HorizontalScroll />
          <MarqueeSection />
       </div>
+              <VerticalNavigation 
+          currentSection={currentSection} 
+          onNavigate={handleVerticalNavClick} 
+          themes={navigationThemes} 
+        />
     </>
   );
 };

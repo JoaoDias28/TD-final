@@ -1,12 +1,12 @@
 // src/HorizontalScroll.tsx
 import React, { useEffect, useState, useRef } from 'react';
-import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 import HorizontalScrollSection from './HorizontalScrollSection';
 import type { ThemePanel } from '../../../types/types';
 import GalleryView from './GalleryView';
+import { scrollManager } from '../../../utils/scrollManager';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -210,142 +210,57 @@ function HorizontalScroll() {
   const [activeGallery, setActiveGallery] = useState<{
     theme: ThemePanel;
     index: number;
+    originSection?: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    };
   } | null>(null);
-  const lenisRef = useRef<Lenis | null>(null);
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const horizontalSectionRef = useRef<HTMLDivElement>(null);
 
-  const scrollPositionBeforeGalleryOpenRef = useRef<number>(0);
-
-  const handleCTAClick = (theme: ThemePanel, index: number) => {
-    if (lenisRef.current) {
-      scrollPositionBeforeGalleryOpenRef.current = lenisRef.current.actualScroll;
+  // Handle theme selection from HorizontalScrollSection
+  const handleThemeSelect = (theme: ThemePanel, index: number, sectionBounds?: DOMRect) => {
+    let originSection;
+    
+    if (sectionBounds) {
+      originSection = {
+        x: sectionBounds.left,
+        y: sectionBounds.top,
+        width: sectionBounds.width,
+        height: sectionBounds.height,
+      };
     }
-    setActiveGallery({ theme, index });
+    
+    setActiveGallery({ theme, index, originSection });
+  };
+
+
+
+  // Handle return to timeline from expanded view
+  const handleReturnToTimeline = () => {
+    // Only scroll to top if user explicitly requests it, not automatically
+    // This prevents unwanted scroll jumps when gallery opens/closes
+    console.log('handleReturnToTimeline called - consider if scroll is needed');
   };
 
   const handleGalleryClose = () => {
-    if (activeGallery === null) return;
-    
-    const galleryElement = galleryContainerRefs.current[activeGallery.index];
-
-    if (galleryElement && parseFloat(galleryElement.style.opacity || "0") > 0) {
-      if (lenisRef.current) {
-        lenisRef.current.scrollTo(scrollPositionBeforeGalleryOpenRef.current, {
-          duration: 1.0,
-          easing: (t) => 1 - Math.pow(1 - t, 4), // easeOutQuart
-        });
-      }
-
-      gsap.to(galleryElement, {
-        height: 0,
-        opacity: 0,
-        duration: 0.8,
-        ease: 'power3.inOut',
-        onComplete: () => {
-          setActiveGallery(null);
-          if (typeof window !== "undefined") ScrollTrigger.refresh();
-        }
-      });
-    } else {
-      setActiveGallery(null); // Ensure state is cleared even if no animation runs
-    }
+    setActiveGallery(null);
   };
 
-  useEffect(() => {
-    if (activeGallery) {
-      const galleryElement = galleryContainerRefs.current[activeGallery.index];
 
-      if (galleryElement && lenisRef.current) {
-        gsap.set(galleryElement, { height: 0, opacity: 0, y: 0 }); 
-
-        gsap.to(galleryElement, {
-          height: 'auto',
-          opacity: 1,
-          duration: 0.8,
-          ease: 'power3.out',
-          onComplete: () => {
-            gsap.set(galleryElement, { height: 'auto' }); 
-            if (typeof window !== "undefined") ScrollTrigger.refresh();
-
-            const galleryRect = galleryElement.getBoundingClientRect();
-            const viewportHeight = window.innerHeight;
-            const stickyHeaderHeight = 80; // Estimated height of sticky header in GalleryView
-
-            // Check if scrolling is needed and lenisRef.current is available
-            if (lenisRef.current) {
-              // If gallery top is too far down or too far up (obscured by header), scroll to it
-              if (galleryRect.top > viewportHeight - stickyHeaderHeight || galleryRect.top < stickyHeaderHeight ) {
-                lenisRef.current.scrollTo(galleryElement, { 
-                  offset: stickyHeaderHeight + 20, 
-                  duration: 0.8, 
-                  easing: (t) => 1 - Math.pow(1 - t, 3) 
-                });
-              } else if (galleryRect.height > viewportHeight - (stickyHeaderHeight + 20) && galleryRect.top > stickyHeaderHeight + 20) {
-                // If gallery is taller than viewport and its top is already a bit down, scroll to its top
-                lenisRef.current.scrollTo(galleryElement, { 
-                  offset: stickyHeaderHeight + 20, 
-                  duration: 0.8, 
-                  easing: (t) => 1 - Math.pow(1 - t, 3) 
-                });
-              }
-            }
-          }
-        });
-      }
-    } else {
-      // Close any open galleries when activeGallery is null
-      galleryContainerRefs.current.forEach(galleryElement => {
-        if (galleryElement && parseFloat(galleryElement.style.opacity || "0") > 0) {
-          gsap.to(galleryElement, {
-            height: 0,
-            opacity: 0,
-            duration: 0.6,
-            ease: 'power3.in',
-            onComplete: () => {
-              if (typeof window !== "undefined") ScrollTrigger.refresh();
-            }
-          });
-        }
-      });
-    }
-  }, [activeGallery]);
 
   useEffect(() => {
-    const lenis = new Lenis({
+    // Initialize scroll manager with advanced configuration
+    scrollManager.init({
       duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       touchMultiplier: 2,
+      smoothWheel: true,
     });
-    lenisRef.current = lenis;
 
-    function raf(time: number) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-    requestAnimationFrame(raf);
-
-    lenis.on('scroll', ScrollTrigger.update);
-
-    gsap.ticker.add((time) => {
-      lenis.raf(time * 1000); // Convert seconds to milliseconds
-    });
-    gsap.ticker.lagSmoothing(0);
-    
-    ScrollTrigger.scrollerProxy(document.body, {
-      scrollTop(value?: number) {
-        if (arguments.length && value !== undefined && lenisRef.current) {
-          lenisRef.current.scrollTo(value, { immediate: true });
-        }
-        return lenisRef.current?.actualScroll || 0;
-      },
-      getBoundingClientRect() {
-        return {top: 0, left: 0, width: window.innerWidth, height: window.innerHeight};
-      },
-    });
-    ScrollTrigger.defaults({ scroller: document.body });
-
-    // Image Preloading
+    // Image Preloading for better performance
     const imagePaths: string[] = [];
     horizontalScrollThemes.forEach(theme => {
       theme.spreadImages?.forEach(img => {
@@ -368,52 +283,36 @@ function HorizontalScroll() {
     });
 
     Promise.all(imagePromises).then(() => {
-      if (typeof window !== "undefined") ScrollTrigger.refresh();
+      scrollManager.refreshScrollTriggers();
     });
 
     return () => {
-      gsap.ticker.lagSmoothing(false); // Reset lagSmoothing
-      // Consider removing the gsap.ticker callback if it was added specifically for Lenis
-      if (lenisRef.current) {
-        lenisRef.current.destroy();
-        lenisRef.current = null;
-      }
-      ScrollTrigger.clearScrollMemory();
-      ScrollTrigger.getAll().forEach(st => st.kill());
+      // Cleanup is handled by the scroll manager
+      scrollManager.destroy();
     };
   }, []);
 
-  // Create refs for each theme's gallery container
-  const galleryContainerRefs = useRef<(HTMLDivElement | null)[]>(Array(horizontalScrollThemes.length).fill(null));
-  
   return (
     <div ref={mainContainerRef} className="text-gray-100 bg-black">
-      <div ref={horizontalSectionRef} data-horizontal-section>
+      <div ref={horizontalSectionRef} id="horizontal-scroll-section" data-horizontal-section>
         <HorizontalScrollSection
           themes={horizontalScrollThemes}
-          onCTAClick={handleCTAClick}
+          onReturnToTimeline={handleReturnToTimeline}
+          onThemeSelect={handleThemeSelect}
+          isGalleryActive={activeGallery !== null}
         />
       </div>
       
-      {/* Create a gallery container for each theme */}
-      {horizontalScrollThemes.map((theme, index) => (
-        <div 
-          key={`gallery-container-${theme.id}`}
-          ref={(el) => { galleryContainerRefs.current[index] = el; }}
-          data-gallery-section 
-          data-theme-index={index}
-          style={{ overflow: 'hidden', height: 0, opacity: 0 }} 
-        >
-          {activeGallery && activeGallery.index === index && (
-            <GalleryView
-              theme={activeGallery.theme}
-              themeIndex={activeGallery.index}
-              totalThemes={horizontalScrollThemes.length}
-              onClose={handleGalleryClose}
-            />
-          )}
-        </div>
-      ))}
+      {/* Slide-up Gallery Overlay */}
+      {activeGallery && (
+        <GalleryView
+          theme={activeGallery.theme}
+          themeIndex={activeGallery.index}
+          totalThemes={horizontalScrollThemes.length}
+          onClose={handleGalleryClose}
+          originSection={activeGallery.originSection}
+        />
+      )}
       
       <Spacer text="Bringing Imagination to Reality" className="text-white" />
 

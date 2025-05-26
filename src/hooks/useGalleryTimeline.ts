@@ -2,11 +2,7 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { gsap } from 'gsap';
 
-interface GalleryControls {
-  animateIn: () => Promise<void>;
-  animateOut: () => Promise<void>;
-  isAnimating: boolean;
-}
+
 
 export function useGalleryTimeline() {
   const timelineRef = useRef<gsap.core.Timeline | null>(null);

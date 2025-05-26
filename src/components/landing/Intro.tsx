@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import type { Picture } from "vite-imagetools";
-import Logo from "../../assets/intro/logo.svg?react";
+
 
 const MAX_DUPLICATES = 0; // No duplicates allowed
 
@@ -317,9 +317,9 @@ const Intro: React.FC<IntroProps> = ({
 
       <div
         ref={logoRef}
-        className="absolute inset-0 z-100 flex items-center justify-center pointer-events-none"
+        className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none"
       >
-        <Logo className="w-[50vw] h-[50vh] max-w-[1200px] text-white transform-origin-top-left" />
+        <img src="./logo.svg" alt="Logo" className="w-24 h-24" />
       </div>
     </div>
   );
