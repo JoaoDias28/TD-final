@@ -42,37 +42,92 @@ const horizontalScrollThemes: ThemePanel[] = [
     gradientClass: '',
     spreadImages: [
       {
-        src: '/categoria/outdoors/outdoor1.png', 
-        alt: 'Outdoor Display', 
-        config: { initialX: '30%', initialY: '15%', depth: 0.7, scale: 1.1, rotate: -2 },
-        url: undefined
+        src: '/categoria/outdoors/outdoor1.png',
+        alt: 'Outdoor Display',
+        url: undefined,
+        config: {
+          defaultDepth: 0.9,
+          sm: {
+            width: '60vw', height: 'auto',
+            depth: 0.9,
+            initial: { x: '-70vw', y: '5vh', scale: 0.7, rotation: -8, opacity: 0 },
+            target:  { x: '25vw', y: '0vh', scale: 0.85, rotation: -2, opacity: 1, xPercent: -5, yPercent: 2 },
+            exit:    { x: '70vw',  y: '-5vh', scale: 0.6, rotation: 8, opacity: 0 },
+          },
+          md: {
+            width: '45vw', height: 'auto',
+            depth: 0.9,
+            initial: { x: '-70vw', y: '8vh', scale: 0.7, rotation: -10, opacity: 0 },
+            target:  { x: '5vw', y: '10vh', scale: 0.9, rotation: -3, opacity: 1, xPercent: -6, yPercent: 3 },
+            exit:    { x: '70vw',  y: '-8vh', scale: 0.6, rotation: 10, opacity: 0 },
+          },
+          lg: { 
+            width: '35vw', height: 'auto',
+            depth: 1.1, 
+            initial: { x: '-10vw', y: '10vh', scale: 0.7, rotation: -12, opacity: 0 },
+            target:  { x: '5vw',   y: '5vh',  scale: 0.8, rotation: -2,  opacity: 1, xPercent: 0, yPercent: 0 },
+            exit:    { x: '-80vw',  y: '5vh',  scale: 0.6, rotation: 12, opacity: 0 },
+          }
+        }
       },
       {
-        src: '/categoria/outdoors/outdoor2.png', 
-        alt: 'Outdoor Creative', 
-        config: { initialX: '70%', initialY: '25%', depth: 1, scale: 0.9, rotate: 3 },
-        url: undefined
+        src: '/categoria/outdoors/outdoor2.png',
+        alt: 'Outdoor Creative',
+        url: undefined,
+        config: {
+          defaultDepth: 1,
+          sm: { 
+            width: '55vw', height: 'auto',
+            depth: 1,
+            initial: { x: '70vw', y: '-5vh', scale: 0.6, rotation: 8, opacity: 0 },
+            target:  { x: '15vw', y: '2vh',  scale: 0.9, rotation: 3, opacity: 1, xPercent: 5, yPercent: -2 },
+            exit:    { x: '-70vw', y: '5vh', scale: 0.5, rotation: -8, opacity: 0 },
+          },
+          md: { 
+            width: '40vw', height: 'auto',
+            depth: 1,
+            initial: { x: '70vw', y: '-8vh', scale: 0.6, rotation: 10, opacity: 0 },
+            target:  { x: '55vw', y: '60vh',  scale: 0.9, rotation: 4, opacity: 1, xPercent: 7, yPercent: -3 },
+            exit:    { x: '-70vw', y: '8vh', scale: 0.5, rotation: -10, opacity: 0 },
+          },
+          lg: { 
+            width: '30vw', height: 'auto',
+            depth: 1, 
+            initial: { x: '80vw', y: '5vh', scale: 0.6, rotation: 12, opacity: 0 },
+            target:  { x: '58vw', y: '5vh',  scale: 0.95, rotation: 5,  opacity: 1, xPercent: 8, yPercent: -2 },
+            exit:    { x: '30vw', y: '5vh',  scale: 0.5, rotation: -12, opacity: 0 },
+          }
+        }
       },
-    ],
-    bottomStripImages: [
       {
-        src: '/bottomImgs/outdoorSilhouette4x3.png', 
-        alt: 'Outdoor Example 1', 
-        depth: 0.9,
-        url: undefined
-      },
-      {
-        src: '/categoria/outdoors/outdoor1.png', 
-        alt: 'Detalhe Outdoor Campanha', 
-        depth: 1.05,
-        url: undefined
-      },
-      {
-        src: '/categoria/outdoors/outdoor2.png', 
-        alt: 'Outdoor Noturno', 
-        depth: 0.95,
-        url: undefined
-      },
+        src: '',
+        alt: 'Outdoor Creative',
+        url: undefined,
+        config: {
+          defaultDepth: 1,
+          sm: { 
+            width: '55vw', height: 'auto',
+            depth: 0.1,
+            initial: { x: '70vw', y: '-5vh', scale: 0.6, rotation: 8, opacity: 0 },
+            target:  { x: '15vw', y: '2vh',  scale: 0.8, rotation: 3, opacity: 1, xPercent: 5, yPercent: -2 },
+            exit:    { x: '-70vw', y: '5vh', scale: 0.5, rotation: -8, opacity: 0 },
+          },
+          md: { 
+            width: '40vw', height: 'auto',
+            depth: 0.1,
+            initial: { x: '70vw', y: '-8vh', scale: 0.6, rotation: 10, opacity: 0 },
+            target:  { x: '22vw', y: '5vh',  scale: 0.85, rotation: 4, opacity: 1, xPercent: 7, yPercent: -3 },
+            exit:    { x: '-70vw', y: '8vh', scale: 0.5, rotation: -10, opacity: 0 },
+          },
+          lg: { 
+            width: '30vw', height: 'auto',
+            depth: 0.1, 
+            initial: { x: '80vw', y: '5vh', scale: 0.6, rotation: 12, opacity: 0 },
+            target:  { x: '28vw', y: '5vh',  scale: 0.95, rotation: 5,  opacity: 1, xPercent: 8, yPercent: -2 },
+            exit:    { x: '-80vw', y: '0vh',  scale: 0.5, rotation: -12, opacity: 0 },
+          }
+        }
+      }
     ],
   },
   {
@@ -83,42 +138,53 @@ const horizontalScrollThemes: ThemePanel[] = [
     gradientClass: '',
     spreadImages: [
       {
-        src: '/categoria/eventos/seasidePalcoFrente.png', 
-        alt: 'Event Stage', 
-        config: { initialX: '15%', initialY: '20%', depth: 0.85, scale: 2.2, rotate: 0 },
-        url: undefined
+        src: '/categoria/eventos/seasidePalcoFrente.png',
+        alt: 'Event Stage',
+        url: undefined,
+        config: {
+          defaultDepth: 1,
+          sm: { width: '70vw', height: 'auto', initial: { x:'-50vw', y:'0vh', scale:0.7, rotation:0, opacity:0}, target: {x:'-10vw', y:'0vh', scale:0.9, rotation:0, opacity:1}, exit: {x:'50vw', y:'0vh', scale:0.7, rotation:0, opacity:0}},
+          md: { width: '50vw', height: 'auto', initial: { x:'-60vw', y:'0vh', scale:0.7, rotation:0, opacity:0}, target: {x:'0vw', y:'0vh', scale:1, rotation:0, opacity:1}, exit: {x:'60vw', y:'0vh', scale:0.7, rotation:0, opacity:0}},
+          lg: { width: '40vw', height: 'auto', depth: 1.2, initial: { x:'-70vw', y:'0vh', scale:0.7, rotation:0, opacity:0}, target: {x:'0vw', y:'0vh', scale:1.2, rotation:0, opacity:1}, exit: {x:'70vw', y:'0vh', scale:0.7, rotation:0, opacity:0}}
+        }
       },
       {
-        src: '/categoria/eventos/natalSabugal2021_1.png', 
-        alt: 'Christmas Event', 
-        config: { initialX: '65%', initialY: '30%', depth: 1.15, scale: 0.9, rotate: -3 },
-        url: undefined
-      },
-    ],
-    bottomStripImages: [
-      {
-        src: '/categoria/eventos/seasidePalcoFrente.png', 
-        alt: 'Event Stage Front', 
-        depth: 1.05,
-        url: undefined
+        src: '/categoria/eventos/natalSabugal2021_1.png',
+        alt: 'Christmas Event',
+        url: undefined,
+        config: {
+          defaultDepth: 0.8,
+          sm: { width: '50vw', height: 'auto', initial: { x:'50vw', y:'5vh', scale:0.6, rotation:5, opacity:0}, target: {x:'20vw', y:'5vh', scale:0.75, rotation:2, opacity:1}, exit: {x:'-50vw', y:'5vh', scale:0.6, rotation:-5, opacity:0}},
+          md: { width: '35vw', height: 'auto', initial: { x:'60vw', y:'8vh', scale:0.6, rotation:8, opacity:0}, target: {x:'25vw', y:'8vh', scale:0.8, rotation:3, opacity:1}, exit: {x:'-60vw', y:'8vh', scale:0.6, rotation:-8, opacity:0}},
+          lg: { width: '30vw', height: 'auto', depth: 0.9, initial: { x:'70vw', y:'10vh', scale:0.6, rotation:10, opacity:0}, target: {x:'30vw', y:'10vh', scale:0.9, rotation:5, opacity:1}, exit: {x:'-70vw', y:'10vh', scale:0.6, rotation:-10, opacity:0}}
+        }
       },
       {
-        src: '/categoria/eventos/seasidePalcoLadoDireito.png', 
-        alt: 'Event Stage Right', 
-        depth: 0.95,
-        url: undefined
+        src: '/categoria/eventos/seasidePalcoLadoDireito.png',
+        alt: 'Event Stage Right',
+        url: undefined,
+        config: { 
+          defaultDepth: 0.9,
+          sm: { width: '50vw', height: 'auto', initial: { x:'-50vw', y:'-5vh', scale:0.6, rotation:-5, opacity:0}, target: {x:'-20vw', y:'-5vh', scale:0.75, rotation:-2, opacity:1}, exit: {x:'50vw', y:'-5vh', scale:0.6, rotation:5, opacity:0}},
+          md: { width: '33vw', height: 'auto', initial: { x:'-60vw', y:'-8vh', scale:0.6, rotation:-8, opacity:0}, target: {x:'-25vw', y:'-8vh', scale:0.8, rotation:-3, opacity:1}, exit: {x:'60vw', y:'-8vh', scale:0.6, rotation:8, opacity:0}},
+          lg: { width: '28vw', height: 'auto', depth: 0.95, initial: { x:'-70vw', y:'-10vh', scale:0.6, rotation:-10, opacity:0}, target: {x:'-30vw', y:'-10vh', scale:0.85, rotation:-5, opacity:1}, exit: {x:'70vw', y:'-10vh', scale:0.6, rotation:10, opacity:0}}
+        }
       },
       {
-        src: '/categoria/eventos/seasidePalcoLadoEsquerdo.png', 
-        alt: 'Event Stage Left', 
-        depth: 1.0,
-        url: undefined
-      },
-      {
-        src: '/categoria/eventos/natalSabugal2021_1.png', 
-        alt: 'Detalhe Evento Natal', 
-        depth: 1.1,
-        url: undefined
+        src: '/categoria/eventos/seasidePalcoLadoEsquerdo.png',
+        alt: 'Event Stage Left',
+        url: undefined,
+        config: {
+          defaultDepth: 0.85,
+          sm: { width: '50vw', height: 'auto', initial: { x:'50vw', y:'0vh', scale:0.6, rotation:5, opacity:0}, target: {x:'20vw', y:'0vh', scale:0.75, rotation:2, opacity:1}, exit: {x:'-50vw', y:'0vh', scale:0.6, rotation:-5, opacity:0}},
+          md: { width: '33vw', height: 'auto', initial: { x:'60vw', y:'0vh', scale:0.6, rotation:8, opacity:0}, target: {x:'25vw', y:'0vh', scale:0.8, rotation:3, opacity:1}, exit: {x:'-60vw', y:'0vh', scale:0.6, rotation:-8, opacity:0}},
+          lg: { 
+              width: '25vw', height: 'auto', depth: 0.8, 
+              initial: { x: '70vw', y: '-15vh', scale:0.5, rotation:15, opacity:0},
+              target: {x:'40vw', y:'-12vh', scale:0.75, rotation:8, opacity:1, xPercent: 10, yPercent: -5},
+              exit: {x:'-70vw', y:'-10vh', scale:0.5, rotation:-15, opacity:0}
+          }
+        }
       },
     ],
   },
@@ -130,37 +196,27 @@ const horizontalScrollThemes: ThemePanel[] = [
     gradientClass: '',
     spreadImages: [
       {
-        src: '/categoria/decoracao_espacos/dockCabril1.png', 
-        alt: 'Dock Cabril', 
-        config: { initialX: '20%', initialY: '60%', depth: 0.7, scale: 1.3, rotate: 0 },
-        url: undefined
+        src: '/categoria/decoracao_espacos/dockCabril1.png',
+        alt: 'Dock Cabril',
+        url: undefined,
+        config: { 
+          defaultDepth: 0.7,
+          sm: { width:'65vw', height:'auto', initial: {opacity:0, scale:0.5, x:'-50vw', y:'0vh', rotation:0}, target:{opacity:1, scale:0.8, x:'-10vw', y:'0vh', rotation:0}, exit:{opacity:0, scale:0.5, x:'50vw', y:'0vh', rotation:0}},
+          md: { width:'45vw', height:'auto', initial: {opacity:0, scale:0.6, x:'-60vw', y:'0vh', rotation:0}, target:{opacity:1, scale:0.9, x:'-15vw', y:'0vh', rotation:0}, exit:{opacity:0, scale:0.6, x:'60vw', y:'0vh', rotation:0}},
+          lg: { width:'35vw', height:'auto', initial: {opacity:0, scale:0.7, x:'-70vw', y:'0vh', rotation:0}, target:{opacity:1, scale:1, x:'-20vw', y:'0vh', rotation:0}, exit:{opacity:0, scale:0.7, x:'70vw', y:'0vh', rotation:0}}
+        }
       },
       {
-        src: '/categoria/decoracao_espacos/decEspacoBarragem.jpeg', 
-        alt: 'Space Decoration', 
-        config: { initialX: '70%', initialY: '25%', depth: 0.5, scale: 1.1, rotate: 0 },
-        url: undefined
+        src: '/categoria/decoracao_espacos/decEspacoBarragem.jpeg',
+        alt: 'Space Decoration',
+        url: undefined,
+        config: { 
+          defaultDepth: 0.5,
+          sm: { width:'60vw', height:'auto', initial: {opacity:0, scale:0.5, x:'50vw', y:'0vh', rotation:0}, target:{opacity:1, scale:0.8, x:'10vw', y:'0vh', rotation:0}, exit:{opacity:0, scale:0.5, x:'-50vw', y:'0vh', rotation:0}},
+          md: { width:'40vw', height:'auto', initial: {opacity:0, scale:0.6, x:'60vw', y:'0vh', rotation:0}, target:{opacity:1, scale:0.9, x:'15vw', y:'0vh', rotation:0}, exit:{opacity:0, scale:0.6, x:'-60vw', y:'0vh', rotation:0}},
+          lg: { width:'33vw', height:'auto', initial: {opacity:0, scale:0.7, x:'70vw', y:'0vh', rotation:0}, target:{opacity:1, scale:1, x:'20vw', y:'0vh', rotation:0}, exit:{opacity:0, scale:0.7, x:'-70vw', y:'0vh', rotation:0}}
+        }
       }
-    ],
-    bottomStripImages: [
-      {
-        src: '/categoria/decoracao_espacos/dockCabril1.png', 
-        alt: 'Dock Cabril Detalhe 1', 
-        depth: 0.9,
-        url: undefined
-      },
-      {
-        src: '/categoria/decoracao_espacos/dockCabril2.png', 
-        alt: 'Dock Cabril Detalhe 2', 
-        depth: 1.1,
-        url: undefined
-      },
-      {
-        src: '/categoria/decoracao_espacos/decEspacoBarragem.jpeg', 
-        alt: 'Decor Barragem Vista', 
-        depth: 1.0,
-        url: undefined
-      },
     ],
   },
   {
@@ -171,37 +227,27 @@ const horizontalScrollThemes: ThemePanel[] = [
     gradientClass: '',
     spreadImages: [
        {
-         src: '/categoria/entre_outros/baloico_penalobo1.png', 
-         alt: 'Baloico Penalobo', 
-         config: { initialX: '30%', initialY: '20%', depth: 0.9, scale: 1.0, rotate: 2 },
-         url: undefined
+         src: '/categoria/entre_outros/baloico_penalobo1.png',
+         alt: 'Baloico Penalobo',
+         url: undefined,
+         config: { 
+           defaultDepth: 0.9,
+           sm: { width:'60vw', height:'auto', initial: {opacity:0, x:'-50vw', y:'0vh', rotation:0, scale:0.7}, target:{opacity:1, x:'-10vw', y:'0vh', rotation:0, scale:0.9}, exit:{opacity:0, x:'50vw', y:'0vh', rotation:0, scale:0.7}},
+           md: { width:'40vw', height:'auto', initial: {opacity:0, x:'-60vw', y:'0vh', rotation:0, scale:0.7}, target:{opacity:1, x:'-15vw', y:'0vh', rotation:0, scale:1}, exit:{opacity:0, x:'60vw', y:'0vh', rotation:0, scale:0.7}},
+           lg: { width:'30vw', height:'auto', initial: {opacity:0, x:'-70vw', y:'0vh', rotation:0, scale:0.7}, target:{opacity:1, x:'-25vw', y:'0vh', rotation:0, scale:1.1}, exit:{opacity:0, x:'70vw', y:'0vh', rotation:0, scale:0.7}}
+         }
        },
        {
-         src: '/categoria/entre_outros/baloico_penalobo2.png', 
-         alt: 'Baloico Penalobo Detail', 
-         config: { initialX: '65%', initialY: '60%', depth: 1.2, scale: 0.8, rotate: -3 },
-         url: undefined
+         src: '/categoria/entre_outros/baloico_penalobo2.png',
+         alt: 'Baloico Penalobo Detail',
+         url: undefined,
+         config: { 
+           defaultDepth: 1.2,
+           sm: { width:'55vw', height:'auto', initial: {opacity:0, x:'50vw', y:'0vh', rotation:0, scale:0.6}, target:{opacity:1, x:'10vw', y:'0vh', rotation:0, scale:0.8}, exit:{opacity:0, x:'-50vw', y:'0vh', rotation:0, scale:0.6}},
+           md: { width:'35vw', height:'auto', initial: {opacity:0, x:'60vw', y:'0vh', rotation:0, scale:0.6}, target:{opacity:1, x:'15vw', y:'0vh', rotation:0, scale:0.9}, exit:{opacity:0, x:'-60vw', y:'0vh', rotation:0, scale:0.6}},
+           lg: { width:'28vw', height:'auto', initial: {opacity:0, x:'70vw', y:'0vh', rotation:0, scale:0.6}, target:{opacity:1, x:'25vw', y:'0vh', rotation:0, scale:1}, exit:{opacity:0, x:'-70vw', y:'0vh', rotation:0, scale:0.6}}
+         }
        },
-    ],
-    bottomStripImages: [
-      {
-        src: '/categoria/entre_outros/baloico_penalobo1.png', 
-        alt: 'Baloico Penalobo Vista 1', 
-        depth: 1.15,
-        url: undefined
-      },
-      {
-        src: '/categoria/entre_outros/baloico_penalobo2.png', 
-        alt: 'Baloico Penalobo Vista 2', 
-        depth: 0.8,
-        url: undefined
-      },
-      {
-        src: '/bottomImgs/outdoorSilhouette4x3.png', 
-        alt: 'Projeto Criativo Exemplo', 
-        depth: 1.0,
-        url: undefined
-      }
     ],
   },
 ];
@@ -219,7 +265,11 @@ function HorizontalScroll() {
   } | null>(null);
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const horizontalSectionRef = useRef<HTMLDivElement>(null);
-
+  const panelsWrapperRef = useRef<HTMLDivElement>(null);
+  const [horizontalProgress, setHorizontalProgress] = useState({ activePanel: 0, progress: 0 });
+  const mainHorizontalTweenRef = useRef<gsap.core.Tween | null>(null);
+  const [containerAnimation, setContainerAnimation] = useState<gsap.core.Tween | null>(null);
+  
   // Handle theme selection from HorizontalScrollSection
   const handleThemeSelect = (theme: ThemePanel, index: number, sectionBounds?: DOMRect) => {
     let originSection;
@@ -236,8 +286,6 @@ function HorizontalScroll() {
     setActiveGallery({ theme, index, originSection });
   };
 
-
-
   // Handle return to timeline from expanded view
   const handleReturnToTimeline = () => {
     // Only scroll to top if user explicitly requests it, not automatically
@@ -248,8 +296,6 @@ function HorizontalScroll() {
   const handleGalleryClose = () => {
     setActiveGallery(null);
   };
-
-
 
   useEffect(() => {
     // Initialize scroll manager with advanced configuration
@@ -264,10 +310,6 @@ function HorizontalScroll() {
     const imagePaths: string[] = [];
     horizontalScrollThemes.forEach(theme => {
       theme.spreadImages?.forEach(img => {
-        const src = img.src.startsWith('/') ? img.src : `/${img.src}`;
-        imagePaths.push(src);
-      });
-      theme.bottomStripImages?.forEach(img => {
         const src = img.src.startsWith('/') ? img.src : `/${img.src}`;
         imagePaths.push(src);
       });
@@ -292,16 +334,127 @@ function HorizontalScroll() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!mainContainerRef.current || !horizontalSectionRef.current || !panelsWrapperRef.current) return;
+
+    const panels = gsap.utils.toArray<HTMLElement>(
+      horizontalSectionRef.current.querySelectorAll(":scope > .h-scroll-section-panel")
+    );
+
+    if (panels.length === 0) {
+        console.warn("HorizontalScroll: No panels found with .h-scroll-section-panel class.");
+        return;
+    }
+
+    // Set up individual panel initial states
+    panels.forEach((panel, index) => {
+      // Initial state: all panels except first are hidden
+      gsap.set(panel, {
+        opacity: index === 0 ? 1 : 0,
+        scale: index === 0 ? 1 : 0.8,
+      });
+
+      // Set initial text states
+      const contentContainer = panel.querySelector('.content-container');
+      if (contentContainer) {
+        const textElements = contentContainer.querySelectorAll('h2, p, .cta-button');
+        if (index === 0) {
+          gsap.set(textElements, { opacity: 1, y: 0 });
+        } else {
+          gsap.set(textElements, { opacity: 0, y: 30 });
+        }
+      }
+    });
+
+    // Create main horizontal pin ScrollTrigger (like in Hero.tsx)
+    const mainHorizontalScrollTween: gsap.core.Tween = gsap.to(horizontalSectionRef.current, {
+      xPercent: (-100 * (panels.length - 1)) / (panels.length || 1),
+      ease: "none", 
+      scrollTrigger: {
+        trigger: panelsWrapperRef.current,
+        pin: true,
+        scrub: 1,
+        snap: {
+          snapTo: 1 / (panels.length - 1),
+          duration: { min: 0.2, max: 0.5 },
+          delay: 0,
+          ease: "power1.inOut",
+        },
+        end: () => "+=" + (horizontalSectionRef.current ? horizontalSectionRef.current.offsetWidth / panels.length * (panels.length - 1) : 0),
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          const progress = self.progress;
+          const totalPanels = panels.length;
+          
+          let currentPanelIdx = Math.floor(progress * totalPanels);
+          currentPanelIdx = Math.min(currentPanelIdx, totalPanels - 1); 
+          currentPanelIdx = Math.max(0, currentPanelIdx); 
+          
+          const panelProgressVal = totalPanels > 0 ? ((progress * totalPanels) % 1) : 0;
+          
+          setHorizontalProgress({
+            activePanel: currentPanelIdx,
+            progress: panelProgressVal
+          });
+        }
+      }
+    });
+
+    // Store reference for child sections
+    mainHorizontalTweenRef.current = mainHorizontalScrollTween;
+    setContainerAnimation(mainHorizontalScrollTween);
+
+    const refreshTimeout = setTimeout(() => ScrollTrigger.refresh(), 100);
+
+    return () => {
+      clearTimeout(refreshTimeout);
+      mainHorizontalScrollTween.kill();
+      ScrollTrigger.getAll().forEach(st => {
+        if (st.vars.trigger === panelsWrapperRef.current && st.animation === mainHorizontalScrollTween) st.kill();
+      });
+    };
+  }, [horizontalScrollThemes.length]);
+
+  // Optional: Log progress for debugging (remove in production)
+  useEffect(() => {
+    console.log('Horizontal Progress:', horizontalProgress);
+  }, [horizontalProgress]);
+
   return (
-    <div ref={mainContainerRef} className="text-gray-100 bg-black">
-      <div ref={horizontalSectionRef} id="horizontal-scroll-section" data-horizontal-section>
-        <HorizontalScrollSection
-          themes={horizontalScrollThemes}
-          onReturnToTimeline={handleReturnToTimeline}
-          onThemeSelect={handleThemeSelect}
-          isGalleryActive={activeGallery !== null}
-        />
-      </div>
+    <div ref={mainContainerRef} className="text-gray-100 ">
+      <section 
+        id="horizontal-scroll-section"
+        ref={panelsWrapperRef} 
+        className="relative  overflow-hidden"
+        data-horizontal-section
+      >
+        <div 
+          ref={horizontalSectionRef} 
+          id="horizontal-panels-container"
+          className="relative flex h-screen"
+          style={{ width: `${horizontalScrollThemes.length * 100}vw` }}
+        >
+          {horizontalScrollThemes.map((theme, index) => (
+            <HorizontalScrollSection
+              key={theme.id}
+              theme={theme}
+              index={index}
+              totalThemes={horizontalScrollThemes.length}
+              isGalleryActive={activeGallery !== null}
+              panelProgress={
+                index < horizontalProgress.activePanel
+                  ? 1
+                  : index === horizontalProgress.activePanel
+                  ? horizontalProgress.progress
+                  : 0
+              }
+              containerAnimation={containerAnimation}
+              onThemeSelect={(sectionBounds) => handleThemeSelect(theme, index, sectionBounds)}
+              onReturnToTimeline={handleReturnToTimeline}
+            />
+          ))}
+        </div>
+      </section>
       
       {/* Slide-up Gallery Overlay */}
       {activeGallery && (

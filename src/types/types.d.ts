@@ -39,6 +39,39 @@ interface ParallaxConfig {
   height?: string; // Optional height for the image
 }
 
+// NEW TYPE DEFINITIONS START HERE
+
+// Describes the animation properties for an image at a specific moment (e.g., initial, target, exit)
+interface AnimationState {
+  x: number | string;      // CSS transform: translateX()
+  y: number | string;      // CSS transform: translateY()
+  scale: number;
+  rotation: number;
+  opacity: number;
+  xPercent?: number;    // GSAP's xPercent for fine-tuned transform-origin independent positioning/parallax
+  yPercent?: number;    // GSAP's yPercent
+}
+
+// Configuration specific to a single breakpoint for a spread image
+interface BreakpointSpecificConfig {
+  initial: AnimationState; // State before animation starts
+  target: AnimationState;  // State when fully animated in / main state
+  exit: AnimationState;    // State when animating out
+  width?: string;          // Rendered width of the image (e.g., '200px', '15vw')
+  height?: string;         // Rendered height of the image
+  depth?: number;          // For z-index calculations or to influence parallax if not directly in x/yPercent.
+                           // 1 = neutral. <1 = further back, >1 = closer.
+}
+
+// The main configuration object for a spread image, containing settings for each breakpoint
+interface ResponsiveParallaxConfig {
+  sm?: BreakpointSpecificConfig;
+  md?: BreakpointSpecificConfig;
+  lg?: BreakpointSpecificConfig;
+  defaultDepth?: number;     // A general depth for the image, can be overridden by breakpoint specific depth.
+}
+// NEW TYPE DEFINITIONS END HERE
+
 interface ImageAsset {
   src: string;
   alt: string;
@@ -46,9 +79,11 @@ interface ImageAsset {
 
 interface SpreadParallaxImage extends ImageAsset {
   url: string | undefined;
-  config: ParallaxConfig;
+  config: ResponsiveParallaxConfig; // UPDATED: Was ParallaxConfig
+  // uniqueId will be added dynamically in HorizontalScrollSection if images are repeated for different counts
 }
 
+// BottomStripImage is no longer used in HorizontalScrollSection, but keeping type for now if used elsewhere
 interface BottomStripImage extends ImageAsset {
   url: string | undefined;
   depth?: number; // For horizontal parallax of bottom strip images. 1 = normal.
@@ -63,8 +98,7 @@ export interface ThemePanel {
   ctaText: string;
   gradientClass: string;
   images?: string[]; // This was the original structure, we'll adapt data for bottomStripImages
-  spreadImages?: SpreadParallaxImage[];
-  bottomStripImages?: BottomStripImage[]; // New, more descriptive name for the bottom strip
+  spreadImages?: SpreadParallaxImage[]; // Uses the updated SpreadParallaxImage
 }
 
 // types/gallery.ts

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { TextPlugin } from "gsap/TextPlugin";
@@ -7,184 +7,21 @@ import type { Picture } from "vite-imagetools";
 import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
 import Navbar from "../navigation/Navbar";
+import VerticalNavigation from "../navigation/VerticalNavigation";
 import MarqueeSection from "./sections/MarqueeSection";
 import HorizontalScroll from "./sections/HorizontalScroll";
 import { scrollManager } from "../../utils/scrollManager";
+import ImageStack from "./ImageStack";
 
 // Register GSAP plugins safely
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, TextPlugin, SplitText, ScrollToPlugin);
 }
 
-// Professional Vertical Navigation Component
-interface VerticalNavProps {
-  currentSection: string;
-  onNavigate: (section: string) => void;
-  themes: Array<{ id: number; title: string; }>;
-}
-
-const VerticalNavigation: React.FC<VerticalNavProps> = ({ currentSection, onNavigate, themes }) => {
-  const navRef = useRef<HTMLDivElement>(null);
-  const pathRef = useRef<SVGPathElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  const navigationSections = [
-    { id: 'home', title: 'Home', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-    ...themes.map(theme => ({
-      id: `theme-${theme.id}`,
-      title: theme.title,
-      icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'
-    }))
-  ];
-
-  useEffect(() => {
-    // Show navigation after initial load
-    const timer = setTimeout(() => setIsVisible(true), 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (!isVisible || !navRef.current || !pathRef.current) return;
-
-    // Animate SVG path drawing
-    const path = pathRef.current;
-    const pathLength = path.getTotalLength();
-    
-    gsap.set(path, {
-      strokeDasharray: pathLength,
-      strokeDashoffset: pathLength
-    });
-
-    gsap.to(path, {
-      strokeDashoffset: 0,
-      duration: 2,
-      ease: 'power2.out'
-    });
-
-    // Animate navigation items
-    const navItems = navRef.current.querySelectorAll('.nav-item');
-    gsap.fromTo(navItems, 
-      { opacity: 0, x: -30, scale: 0.8 },
-      { 
-        opacity: 1, 
-        x: 0, 
-        scale: 1,
-        duration: 0.6,
-        stagger: 0.1,
-        ease: 'back.out(1.5)',
-        delay: 0.5
-      }
-    );
-  }, [isVisible]);
-
-  const handleNavClick = (sectionId: string) => {
-    onNavigate(sectionId);
-    
-    // Pulse animation on click
-    const activeItem = navRef.current?.querySelector(`[data-section="${sectionId}"]`);
-    if (activeItem) {
-      gsap.fromTo(activeItem,
-        { scale: 1 },
-        { scale: 1.15, duration: 0.1, yoyo: true, repeat: 1, ease: 'power2.out' }
-      );
-    }
-  };
-
-  if (!isVisible) return null;
-
-  return (
-    <div 
-      ref={navRef}
-      className="fixed left-6 top-1/2 transform -translate-y-1/2 z-50"
-      style={{ willChange: 'transform, opacity' }}
-    >
-      {/* Connecting SVG Path */}
-      <svg 
-        className="absolute left-6 top-0 h-full w-8 pointer-events-none"
-        style={{ transform: 'translateY(-50%)', top: '50%' }}
-      >
-        <path
-          ref={pathRef}
-          d={`M4 0 Q4 ${navigationSections.length * 60 / 4} 4 ${navigationSections.length * 60 / 2} Q4 ${navigationSections.length * 60 * 3 / 4} 4 ${navigationSections.length * 60}`}
-          stroke="rgba(255, 255, 255, 0.3)"
-          strokeWidth="2"
-          fill="none"
-          strokeLinecap="round"
-        />
-      </svg>
-
-      {/* Navigation Points */}
-      <div className="flex flex-col space-y-8">
-        {navigationSections.map((section, index) => {
-          const isActive = currentSection === section.id;
-          
-          return (
-            <div
-              key={section.id}
-              data-section={section.id}
-              className="nav-item relative group cursor-pointer"
-              onClick={() => handleNavClick(section.id)}
-            >
-              {/* Navigation Point */}
-              <div 
-                className={`
-                  w-4 h-4 rounded-full border-2 transition-all duration-300 relative z-10
-                  ${isActive 
-                    ? 'bg-red-500 border-red-500 shadow-lg shadow-red-500/50' 
-                    : 'bg-white/10 border-white/30 hover:bg-white/20 hover:border-white/50'
-                  }
-                `}
-              >
-                {/* Active indicator pulse */}
-                {isActive && (
-                  <div className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-50"></div>
-                )}
-              </div>
-
-              {/* Label Tooltip */}
-              <div 
-                className={`
-                  absolute left-8 top-1/2 transform -translate-y-1/2 
-                  bg-black/90 backdrop-blur-sm border border-white/20 rounded-lg px-4 py-2
-                  opacity-0 translate-x-2 pointer-events-none transition-all duration-300
-                  group-hover:opacity-100 group-hover:translate-x-0
-                  whitespace-nowrap z-20
-                `}
-                style={{
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="16" 
-                    height="16" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                    className="text-white/70"
-                  >
-                    <path d={section.icon} />
-                  </svg>
-                  <span className="text-sm font-medium text-white">
-                    {section.title}
-                  </span>
-                </div>
-                
-                {/* Arrow pointer */}
-                <div 
-                  className="absolute right-full top-1/2 transform -translate-y-1/2 
-                             border-4 border-transparent border-r-black/90"
-                ></div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+// Helper to get main pin trigger
+const getMainHorizontalPinTrigger = (horizontalSectionElement: Element): ScrollTrigger | undefined => {
+  return ScrollTrigger.getAll().find(st => 
+    st.vars.trigger === horizontalSectionElement && st.vars.pin === true
   );
 };
 
@@ -214,50 +51,43 @@ interface HeroProps {
   onNavClick?: (section: string) => void;
 }
 
-const MAX_STACK_SIZE = 4;
-const IMAGE_CYCLE_INTERVAL = 7000;
-
-const targetImagePositions = [
-  { x: 0, y: -15, z: 0, rotation: -4 },
-  { x: 45, y: 25, z: -70, rotation: 6 },
-  { x: -50, y: -35, z: -140, rotation: -7 },
-  { x: 25, y: 55, z: -210, rotation: 5 },
-];
-
-const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
+const Hero: React.FC<HeroProps> = ({ themes: propThemes, introComplete, onNavClick }) => {
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const heroSectionRef = useRef<HTMLDivElement>(null);
   const textContentRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const diagonalScrollRef = useRef<HTMLDivElement>(null);
-  const rightImageStackRef = useRef<HTMLDivElement>(null);
   const scrollIndicatorRef = useRef<HTMLDivElement>(null);
   const decorativeBlob1Ref = useRef<HTMLDivElement>(null);
   const decorativeBlob2Ref = useRef<HTMLDivElement>(null);
 
-  const imageItemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const nextImageToShowMasterIndexRef = useRef(0);
-  const [imageCycleTrigger, setImageCycleTrigger] = useState(0);
-
-  const [isLoaded, setIsLoaded] = useState(false);
-  const mouseMoveHandlerRef = useRef<((e: MouseEvent) => void) | null>(null);
-
-  const cycleIntervalIdRef = useRef<number | null>(null);
-  const cycledImageCountRef = useRef(0);
-  const hasCompletedFullCycleRef = useRef(false);
-
+  const [imagesLoaded, setImagesLoaded] = useState(false);
   const [isDesktop, setIsDesktop] = useState(true);
   
-  // Navigation state management
   const [currentSection, setCurrentSection] = useState('home');
+  const [horizontalProgress, setHorizontalProgress] = useState({ activePanel: 0, progress: 0 });
+  const [isInHorizontalSection, setIsInHorizontalSection] = useState(false);
+  const [overallPageScrollProgress, setOverallPageScrollProgress] = useState(0);
   
-  // Define theme sections for navigation
-  const navigationThemes = [
+  const navigationConfig = useMemo(() => {
+    const vhVal = typeof window !== 'undefined' ? window.innerHeight : 1000;
+    const horizontalSectionStartApprox = vhVal * 1.3;
+
+    return [
+      { id: 'home', title: 'Home', scrollPosition: 0, icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+      { id: 'theme-1', title: 'Outdoors', scrollPosition: horizontalSectionStartApprox, icon: 'M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z M15 13a3 3 0 11-6 0 3 3 0 016 0z' },
+      { id: 'theme-2', title: 'Feiras & Eventos', scrollPosition: horizontalSectionStartApprox + vhVal * 0.05, icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+      { id: 'theme-3', title: 'Decoração de Espaços', scrollPosition: horizontalSectionStartApprox + vhVal * 0.1, icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
+      { id: 'theme-4', title: 'Projetos Criativos', scrollPosition: horizontalSectionStartApprox + vhVal * 0.15, icon: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z' }
+    ];
+  }, []);
+
+  const navigationThemes = useMemo(() => [
     { id: 1, title: 'Outdoors' },
     { id: 2, title: 'Feiras & Eventos' },
     { id: 3, title: 'Decoração de Espaços' },
     { id: 4, title: 'Projetos Criativos' }
-  ];
+  ], []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -268,83 +98,32 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
-  const allImages = Object.values(themes)
-    .flat()
-    .map(getImageUrl)
-    .filter(Boolean);
-
-  const numImagesToDisplayInStack = Math.min(MAX_STACK_SIZE, allImages.length);
-  const initialStackImageUrls = allImages.slice(0, numImagesToDisplayInStack);
-
+  const allThemeImages = useMemo(() => 
+    Object.values(propThemes).flat().map(getImageUrl).filter(Boolean)
+  , [propThemes]);
+  
   useEffect(() => {
-    if (allImages.length === 0) {
-      setIsLoaded(true);
+    if (allThemeImages.length === 0) {
+      setImagesLoaded(true);
       return;
     }
     let isMounted = true;
-    const imagePromises = allImages.map((url) => {
+    const imagePromises = allThemeImages.map((url) => {
       return new Promise<void>((resolve) => {
         const img = new Image();
         img.onload = () => resolve();
-        img.onerror = () => resolve();
+        img.onerror = () => resolve(); 
         img.src = url;
       });
     });
-    Promise.all(imagePromises).then(() => { if(isMounted) setIsLoaded(true); });
-    const timeoutId = setTimeout(() => { if (!isLoaded && isMounted) setIsLoaded(true); }, 5000);
+    Promise.all(imagePromises).then(() => { if(isMounted) setImagesLoaded(true); });
+    const timeoutId = setTimeout(() => { if (!imagesLoaded && isMounted) setImagesLoaded(true); }, 5000); 
     return () => { isMounted = false; clearTimeout(timeoutId); };
-  }, [allImages, isLoaded]);
-
-  useEffect(() => {
-    if (!introComplete || allImages.length === 0) {
-      hasCompletedFullCycleRef.current = false;
-      cycledImageCountRef.current = 0;
-      if (cycleIntervalIdRef.current !== null) {
-        clearInterval(cycleIntervalIdRef.current);
-        cycleIntervalIdRef.current = null;
-      }
-    }
-  }, [introComplete, allImages.length]);
-
-  useEffect(() => {
-    if (cycleIntervalIdRef.current !== null) {
-      clearInterval(cycleIntervalIdRef.current);
-      cycleIntervalIdRef.current = null;
-    }
-    if (!isLoaded || !introComplete || allImages.length <= numImagesToDisplayInStack || numImagesToDisplayInStack < 2 || hasCompletedFullCycleRef.current) {
-      return;
-    }
-    cycleIntervalIdRef.current = window.setInterval(() => {
-      if (hasCompletedFullCycleRef.current) {
-        if (cycleIntervalIdRef.current !== null) clearInterval(cycleIntervalIdRef.current);
-        cycleIntervalIdRef.current = null;
-        return;
-      }
-      setImageCycleTrigger(prev => prev + 1);
-    }, IMAGE_CYCLE_INTERVAL);
-    return () => { if (cycleIntervalIdRef.current !== null) clearInterval(cycleIntervalIdRef.current); };
-  }, [isLoaded, introComplete, allImages.length, numImagesToDisplayInStack]);
-
-  const applyFloatingAnimations = useCallback((elementsToAnimate: (HTMLDivElement | null)[]) => {
-    const validElements = elementsToAnimate.filter(Boolean) as HTMLDivElement[];
-    gsap.killTweensOf(validElements, "floating");
-    validElements.forEach((el) => {
-      if (!el || !el.dataset.stackIndex) return;
-      const stackIndex = parseInt(el.dataset.stackIndex, 10);
-      const basePos = targetImagePositions[stackIndex];
-      if (!basePos) return;
-      gsap.to(el, {
-        y: basePos.y + (stackIndex % 2 === 0 ? (6 + Math.random()*4) : (-6 - Math.random()*4)),
-        rotation: basePos.rotation + (Math.random() * 2 - 1),
-        duration: 4 + Math.random() * 2,
-        repeat: -1, yoyo: true, ease: "sine.inOut", id: `floating-${stackIndex}`, overwrite: "auto", 
-      });
-    });
-  }, []);
+  }, [allThemeImages, imagesLoaded]);
 
   useGSAP(
     () => {
-      if (!introComplete || !isLoaded || typeof window === "undefined" || !heroSectionRef.current || !mainContainerRef.current) return;
+      if (!introComplete || !imagesLoaded || typeof window === "undefined" || !heroSectionRef.current || !mainContainerRef.current) return;
 
       const tl = gsap.timeline({ defaults: { ease: "power3.out", duration: 1 }});
       tl.to(heroSectionRef.current, { opacity: 1, visibility: "visible", duration: 0.5 });
@@ -355,45 +134,7 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
         tl.from(splitTitle.chars, { opacity: 0, y: 60, rotateX: -45, stagger: 0.03, duration: 0.8 }, "-=0.2");
       }
       
-      if (rightImageStackRef.current && heroSectionRef.current && numImagesToDisplayInStack > 0) {
-        const stackElements = imageItemRefs.current.filter(Boolean) as HTMLDivElement[];
-        stackElements.forEach((el, index) => {
-          el.dataset.stackIndex = String(index); 
-          const initialPos = targetImagePositions[index];
-          gsap.set(el, {
-            x: initialPos.x + (index % 2 === 0 ? 250 : -250), y: initialPos.y + (index % 2 === 0 ? -200 : 200),
-            rotation: initialPos.rotation + (index % 2 === 0 ? 45 : -45), scale: 0.3, opacity: 0,
-            zIndex: MAX_STACK_SIZE - index, transformOrigin: "center center",
-          });
-        });
-        tl.to(stackElements, {
-          opacity: 1, scale: 1, x: i => targetImagePositions[i]?.x || 0, y: i => targetImagePositions[i]?.y || 0,
-          z: i => targetImagePositions[i]?.z || 0, rotation: i => targetImagePositions[i]?.rotation || 0,
-          stagger: { amount: 0.7, from: "end", ease: "power2.out" }, duration: 1.4,
-        }, "-=0.7");
-        tl.call(() => applyFloatingAnimations(stackElements), [], ">-0.5");
-        nextImageToShowMasterIndexRef.current = numImagesToDisplayInStack % allImages.length;
-        if (allImages.length === 0) nextImageToShowMasterIndexRef.current = 0;
-
-        const heroElementForParallax = heroSectionRef.current;
-        mouseMoveHandlerRef.current = (e: MouseEvent) => {
-          if (!heroElementForParallax) return;
-          const rect = heroElementForParallax.getBoundingClientRect();
-          const mouseX = e.clientX - rect.left; const mouseY = e.clientY - rect.top;
-          const centerX = rect.width / 2; const centerY = rect.height / 2;
-          const dX = (mouseX - centerX) * 0.025; const dY = (mouseY - centerY) * 0.025;
-          const currentElementsInStackOrder = imageItemRefs.current.filter(Boolean) as HTMLDivElement[];
-          gsap.to(currentElementsInStackOrder, {
-            x: (_, targetEl) => { const sIdx = parseInt(targetEl.dataset.stackIndex || "0", 10); return (targetImagePositions[sIdx]?.x || 0) + dX * ((MAX_STACK_SIZE - sIdx) * 0.25 + 0.5); },
-            y: (_, targetEl) => { const sIdx = parseInt(targetEl.dataset.stackIndex || "0", 10); return (targetImagePositions[sIdx]?.y || 0) + dY * ((MAX_STACK_SIZE - sIdx) * 0.25 + 0.5); },
-            rotation: (_, targetEl) => { const sIdx = parseInt(targetEl.dataset.stackIndex || "0", 10); return (targetImagePositions[sIdx]?.rotation || 0) + dX * (sIdx % 2 === 0 ? -0.06 : 0.06) * ((MAX_STACK_SIZE - sIdx) * 0.15 + 0.4); },
-            duration: 0.8, ease: "power2.out", overwrite: "auto", id: "parallaxAnimation"
-          });
-        };
-        heroElementForParallax.addEventListener("mousemove", mouseMoveHandlerRef.current);
-      }
-
-       if (diagonalScrollRef.current) {
+      if (diagonalScrollRef.current) {
         const marqueeItems = gsap.utils.toArray<HTMLDivElement>(diagonalScrollRef.current.querySelectorAll(".diagonal-item"));
         tl.from(diagonalScrollRef.current, { opacity: 0, duration: 1.2, ease: "power3.inOut",}, "-=0.8");
         gsap.from(marqueeItems, { opacity: 0, y: 50, stagger: 0.1, delay: tl.duration() - 1.2, duration: 0.8, });
@@ -416,163 +157,225 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
       if (textContentRef.current && heroSectionRef.current) {
         ScrollTrigger.create({ trigger: heroSectionRef.current, start: "top top", end: "bottom top", pin: textContentRef.current, pinSpacing: false,});
       }
-
-      
-        // Initial position of the follower
-      
-      return () => {
-        if (heroSectionRef.current && mouseMoveHandlerRef.current) {
-          heroSectionRef.current.removeEventListener("mousemove", mouseMoveHandlerRef.current);
-        }
-        // ScrollTriggers are automatically killed by useGSAP's cleanup
-      };
-    }, { 
-        scope: mainContainerRef, 
-        dependencies: [ introComplete, isLoaded, numImagesToDisplayInStack, applyFloatingAnimations, isDesktop ] 
-    }
+    }, { scope: mainContainerRef, dependencies: [ introComplete, imagesLoaded, isDesktop ] }
   );
 
-  useGSAP(() => {
-    if (!introComplete || !isLoaded || imageCycleTrigger === 0 || numImagesToDisplayInStack < 2 || allImages.length <= numImagesToDisplayInStack || hasCompletedFullCycleRef.current) {
-      return;
-    }
-    const currentElementsInStack = imageItemRefs.current.filter(Boolean) as HTMLDivElement[];
-    if (currentElementsInStack.length !== numImagesToDisplayInStack || !rightImageStackRef.current) return;
-    const frontElement = currentElementsInStack.find(el => parseInt(el.dataset.stackIndex || "-1", 10) === 0);
-    if (!frontElement) return;
-
-    const newImageURLForBack = allImages[nextImageToShowMasterIndexRef.current];
-    const cycleTl = gsap.timeline();
-
-    if (heroSectionRef.current && mouseMoveHandlerRef.current) heroSectionRef.current.removeEventListener("mousemove", mouseMoveHandlerRef.current);
-    // Kill specific animations by ID or all animations on the elements
-    currentElementsInStack.forEach((el, index) => {
-      gsap.killTweensOf(el, `floating-${index},parallaxAnimation`); // Kill by specific IDs
-    });
-
-
-    const backTargetPos = targetImagePositions[numImagesToDisplayInStack - 1];
-    cycleTl.to(frontElement, {
-      x: backTargetPos.x, y: backTargetPos.y, z: backTargetPos.z - 60, 
-      rotation: backTargetPos.rotation, opacity: 0.5, scale: 0.75, duration: 0.8, ease: "power2.inOut",
-    });
-    currentElementsInStack.forEach(el => {
-      if (el === frontElement) return;
-      const currentStackIdx = parseInt(el.dataset.stackIndex || "0", 10);
-      const newStackIdx = currentStackIdx - 1;
-      if (newStackIdx >= 0 && targetImagePositions[newStackIdx]) {
-        cycleTl.to(el, { ...targetImagePositions[newStackIdx], duration: 0.8, ease: "power2.inOut" }, "<");
-      }
-    });
-    cycleTl.call(() => {
-      const imgTag = frontElement.querySelector('img');
-      if (imgTag && newImageURLForBack) { imgTag.src = newImageURLForBack; imgTag.alt = `Showcase content ${nextImageToShowMasterIndexRef.current + 1}`; }
-      if (allImages.length > numImagesToDisplayInStack) cycledImageCountRef.current += 1;
-      nextImageToShowMasterIndexRef.current = (nextImageToShowMasterIndexRef.current + 1) % allImages.length;
-      const newOrderedElements: HTMLDivElement[] = new Array(numImagesToDisplayInStack);
-      currentElementsInStack.forEach(el => {
-        let newIndex = (el === frontElement) ? numImagesToDisplayInStack - 1 : parseInt(el.dataset.stackIndex || "0", 10) - 1;
-        el.dataset.stackIndex = String(newIndex);
-        el.style.zIndex = String(MAX_STACK_SIZE - newIndex);
-        if (newIndex >= 0 && newIndex < numImagesToDisplayInStack) newOrderedElements[newIndex] = el;
-      });
-      imageItemRefs.current = newOrderedElements.filter(Boolean);
-      applyFloatingAnimations(imageItemRefs.current);
-      if (heroSectionRef.current && mouseMoveHandlerRef.current) heroSectionRef.current.addEventListener("mousemove", mouseMoveHandlerRef.current);
-      const uniqueImagesToCycleThrough = allImages.length - numImagesToDisplayInStack;
-      if (allImages.length > numImagesToDisplayInStack && cycledImageCountRef.current >= uniqueImagesToCycleThrough) {
-          if (!hasCompletedFullCycleRef.current) { 
-            hasCompletedFullCycleRef.current = true;
-            if (cycleIntervalIdRef.current !== null) { clearInterval(cycleIntervalIdRef.current); cycleIntervalIdRef.current = null; }
-          }
-      }
-    });
-    cycleTl.to(frontElement, { ...backTargetPos, opacity: 1, scale: 1, duration: 0.7, ease: "power2.out", }, ">-0.2");
-  }, { dependencies: [imageCycleTrigger, introComplete, isLoaded, allImages.length, numImagesToDisplayInStack, applyFloatingAnimations], scope: rightImageStackRef });
-
-  // Enhanced navigation handling
-  const handleNavClick = (section: string) => { 
+  const handleLegacyNavClick = (section: string) => { 
     onNavClick?.(section); 
   };
   
-  // Handle vertical navigation with smooth scrolling
   const handleVerticalNavClick = (sectionId: string) => {
-    setCurrentSection(sectionId);
-    
-    if (sectionId === 'home') {
-      // Smooth scroll to top using scroll manager
-      scrollManager.scrollToTop({
-        duration: 1.5,
-        easing: (t: number) => 1 - Math.pow(1 - t, 3) // easeOutCubic
-      });
-    } else {
-      // Extract theme ID and scroll to that section
-      const themeId = sectionId.replace('theme-', '');
-      const targetSelector = `#theme-${themeId}`;
-      
-      // Use scroll manager for smooth element scrolling
-      scrollManager.scrollToElement(targetSelector, {
-        duration: 1.5,
-        offset: 50,
-        easing: (t: number) => 1 - Math.pow(1 - t, 3) // easeOutCubic
-      });
-      
-      // Fallback to horizontal scroll section if specific theme not found
-      if (!document.querySelector(targetSelector)) {
-        scrollManager.scrollToElement('#horizontal-scroll-section', {
-          duration: 1.5,
-          offset: 50,
-          easing: (t: number) => 1 - Math.pow(1 - t, 3)
-        });
-      }
+    const navItem = navigationConfig.find(item => item.id === sectionId);
+    if (!navItem) {
+      console.warn('Unknown section ID for vertical nav:', sectionId);
+      return;
     }
+
+    const horizontalSectionElement = document.querySelector<HTMLElement>('#horizontal-scroll-section');
+
+    if (sectionId.startsWith('theme-') && horizontalSectionElement) {
+      const themeIdToFind = parseInt(sectionId.replace('theme-', ''));
+      const targetPanelIndex = navigationThemes.findIndex(t => t.id === themeIdToFind);
+
+      if (targetPanelIndex !== -1) {
+        const mainPinTrigger = getMainHorizontalPinTrigger(horizontalSectionElement);
+
+        if (mainPinTrigger) {
+          const panelsContainer = horizontalSectionElement.querySelector<HTMLDivElement>(':scope > div[class*="flex"]'); 
+          if (!panelsContainer) {
+            console.warn('Panels container within horizontal section not found.');
+            scrollManager.scrollTo(mainPinTrigger.start); 
+            return;
+          }
+          
+          const totalPanels = navigationThemes.length;
+          let targetProgressInPin = 0;
+          if (totalPanels > 0) {
+             targetProgressInPin = targetPanelIndex / totalPanels; 
+          }
+          targetProgressInPin = Math.max(0, Math.min(1, targetProgressInPin + (0.1 / totalPanels) )); 
+
+          const scrollStart = mainPinTrigger.start;
+          const scrollEnd = mainPinTrigger.end; 
+          const targetScrollY = scrollStart + (scrollEnd - scrollStart) * targetProgressInPin;
+          
+          console.log(`🎯 Navigating to theme panel: ${sectionId} (index ${targetPanelIndex})`, { targetScrollY, targetProgressInPin });
+          scrollManager.scrollTo(targetScrollY, {
+            duration: 1.5, 
+            easing: (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+            onComplete: () => {
+              console.log(`✅ Scrolled near panel ${targetPanelIndex}. GSAP horizontal scroll should take over.`);
+              ScrollTrigger.refresh(); 
+            }
+          });
+        } else {
+          console.warn('Main horizontal pin ScrollTrigger not found. Scrolling to H-section start.');
+          const sectionTop = horizontalSectionElement.getBoundingClientRect().top + window.scrollY;
+          scrollManager.scrollTo(sectionTop);
+        }
+      }
+    } else {
+      const targetScrollY = navItem.scrollPosition;
+      console.log(`🎯 Navigating to vertical section: ${sectionId}`, { targetScrollY });
+      scrollManager.scrollTo(targetScrollY, {
+        duration: 1.8,
+        easing: (t: number) => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+        onComplete: () => console.log('✅ Navigated to:', navItem.title)
+      });
+    }
+    handleLegacyNavClick(sectionId);
   };
   
-  // Track current section based on scroll position
   useEffect(() => {
     if (!introComplete) return;
-    
-    const handleScroll = () => {
+    let rafId: number;
+
+    const calculateScrollValues = () => {
       const scrollY = window.scrollY;
       const windowHeight = window.innerHeight;
-      
-      // Check if we're in the hero section
-      if (scrollY < windowHeight * 0.8) {
-        setCurrentSection('home');
-        return;
+      const docScrollHeight = document.documentElement.scrollHeight;
+      const maxScrollableHeight = docScrollHeight - windowHeight;
+      const horizontalSectionEl = document.querySelector<HTMLElement>('#horizontal-scroll-section');
+
+      // Calculate Overall Page Scroll Progress
+      let currentOverallProgress = 0;
+      if (maxScrollableHeight > 0) {
+        currentOverallProgress = Math.min(1, Math.max(0, scrollY / maxScrollableHeight));
       }
-      
-      // Check theme sections
-      navigationThemes.forEach(theme => {
-        const themeElement = document.querySelector(`#theme-${theme.id}`) ||
-                            document.querySelector('#horizontal-scroll-section');
-        
-        if (themeElement) {
-          const rect = themeElement.getBoundingClientRect();
-          const elementTop = rect.top + scrollY;
-          const elementHeight = rect.height;
-          
-          if (scrollY >= elementTop - windowHeight * 0.5 && 
-              scrollY < elementTop + elementHeight - windowHeight * 0.5) {
-            setCurrentSection(`theme-${theme.id}`);
+
+      if (isInHorizontalSection && horizontalSectionEl) {
+        const mainPinTrigger = getMainHorizontalPinTrigger(horizontalSectionEl);
+        if (mainPinTrigger) {
+            const pinStartScroll = mainPinTrigger.start;
+            const pinEndScroll = mainPinTrigger.end;
+            const pinDuration = pinEndScroll - pinStartScroll;
+            if (maxScrollableHeight > 0 && pinDuration > 0) {
+                const horizontalInternalProgress = mainPinTrigger.progress; 
+                const pinContributionToTotalScroll = pinDuration / maxScrollableHeight;
+                const progressBeforePin = pinStartScroll / maxScrollableHeight;
+                currentOverallProgress = progressBeforePin + (horizontalInternalProgress * pinContributionToTotalScroll);
+            }
+        }
+      }
+      setOverallPageScrollProgress(Math.min(1, Math.max(0, currentOverallProgress)));
+
+      // Determine Current Section
+      if (isInHorizontalSection && horizontalSectionEl) {
+        const activeThemeData = navigationThemes[horizontalProgress.activePanel];
+        if (activeThemeData) {
+          const newSectionId = `theme-${activeThemeData.id}`;
+          if (currentSection !== newSectionId) {
+            setCurrentSection(newSectionId);
           }
         }
-      });
+      } else {
+        let closestSectionId = navigationConfig[0].id;
+        let minDistance = Infinity;
+
+        for (const navItem of navigationConfig) {
+          let isConsiderable = true;
+          if (navItem.id.startsWith('theme-')) {
+            if (horizontalSectionEl) {
+              const rect = horizontalSectionEl.getBoundingClientRect();
+              if (scrollY < (rect.top + scrollY - windowHeight * 0.3) || scrollY > (rect.bottom + scrollY + windowHeight * 0.3)) {
+              } else {
+                isConsiderable = false; 
+              }
+            } else {
+              isConsiderable = false; 
+            }
+          }
+
+          if (isConsiderable) {
+            const distance = Math.abs(scrollY - navItem.scrollPosition);
+            if (distance < minDistance) {
+              minDistance = distance;
+              closestSectionId = navItem.id;
+            }
+          }
+        }
+        
+        const proximityThreshold = windowHeight * 0.45; 
+        if (minDistance < proximityThreshold && currentSection !== closestSectionId) {
+           setCurrentSection(closestSectionId);
+        } else if (scrollY < navigationConfig[0].scrollPosition + proximityThreshold && currentSection !== navigationConfig[0].id) {
+           setCurrentSection(navigationConfig[0].id); 
+        }
+      }
     };
     
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Initial check
+    const throttledHandler = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(calculateScrollValues);
+    };
     
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [introComplete, navigationThemes]);
-  useEffect(() => { imageItemRefs.current = imageItemRefs.current.slice(0, numImagesToDisplayInStack); }, [numImagesToDisplayInStack]);
+    window.addEventListener('scroll', throttledHandler, { passive: true });
+    calculateScrollValues(); // Initial check
+    
+    return () => {
+      window.removeEventListener('scroll', throttledHandler);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [introComplete, navigationConfig, navigationThemes, currentSection, isInHorizontalSection, horizontalProgress.activePanel]);
+
+  useEffect(() => {
+    if (!introComplete) return;
+    let horizontalTrackerST: ScrollTrigger | null = null;
+
+    const setupHorizontalTracking = () => {
+      const horizontalSectionEl = document.querySelector('#horizontal-scroll-section');
+      if (!horizontalSectionEl) {
+        setTimeout(setupHorizontalTracking, 500); 
+        return;
+      }
+
+      const checkForMainPinTrigger = () => {
+        const mainHorizontalPinST = getMainHorizontalPinTrigger(horizontalSectionEl);
+
+        if (mainHorizontalPinST) {
+          horizontalTrackerST = ScrollTrigger.create({
+            trigger: horizontalSectionEl,
+            start: mainHorizontalPinST.vars.start, 
+            end: mainHorizontalPinST.vars.end,     
+            onUpdate: (self) => {
+              const progress = self.progress; 
+              const totalPanels = navigationThemes.length;
+              
+              let currentPanelIdx = Math.floor(progress * totalPanels);
+              currentPanelIdx = Math.min(currentPanelIdx, totalPanels - 1); 
+              currentPanelIdx = Math.max(0, currentPanelIdx); 
+              
+              const panelProgressVal = totalPanels > 0 ? ((progress * totalPanels) % 1) : 0;
+              
+              setHorizontalProgress({
+                activePanel: currentPanelIdx,
+                progress: panelProgressVal
+              });
+            },
+            onEnter: () => setIsInHorizontalSection(true),
+            onLeave: () => setIsInHorizontalSection(false),
+            onEnterBack: () => setIsInHorizontalSection(true),
+            onLeaveBack: () => setIsInHorizontalSection(false),
+          });
+        } else {
+          setTimeout(checkForMainPinTrigger, 200); 
+        }
+      };
+      checkForMainPinTrigger();
+    };
+
+    const timeoutId = setTimeout(setupHorizontalTracking, 100); 
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (horizontalTrackerST) horizontalTrackerST.kill();
+    };
+  }, [introComplete, navigationThemes.length]); 
 
   return (
     <>
-      <Navbar introComplete={introComplete} onNavClick={handleNavClick} />
+      <Navbar introComplete={introComplete} onNavClick={handleLegacyNavClick} />
       <div ref={mainContainerRef} className="relative">
-      
-
         <section
           ref={heroSectionRef}
           id="top"
@@ -581,7 +384,7 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
         >
           <div
             ref={textContentRef}
-            className="w-full md:w-1/2 flex flex-col justify-center items-start p-8 md:pl-16 lg:pl-24 xl:pl-32 z-20 relative" // text content above SVG path by default z-index
+            className="w-full md:w-1/2 flex flex-col justify-center items-start p-8 md:pl-16 lg:pl-24 xl:pl-32 z-20 relative"
           >
             <h1
               ref={titleRef}
@@ -592,35 +395,14 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
             </h1>
           </div>
 
-          <div className="w-full md:w-1/2 h-[50vh] md:h-screen flex items-center justify-center md:justify-start z-10 p-4 md:p-0"> {/* Image stack potentially below SVG (z-10 vs z-5) */}
-            {isLoaded ? (
-            <div
-            ref={rightImageStackRef}
-            className="
-              relative
-              w-[300px] h-[200px]
-              sm:w-[480px] sm:h-[360px]
-              md:w-[560px] md:h-[420px]
-              lg:w-[600px] lg:h-[480px]
-            "
-            style={{ perspective: "1200px", transformStyle: "preserve-3d" }}
-          >
-                {initialStackImageUrls.map((imageUrl, index) => (
-                  <div
-                    key={`img-stack-item-${index}-${imageUrl}`}
-                    ref={el => { if (el) imageItemRefs.current[index] = el; }}
-                    className="image-stack-item absolute w-full h-full overflow-hidden rounded-xl shadow-2xl border-2 border-neutral-700/60"
-                    style={{ willChange: "transform, opacity", zIndex: MAX_STACK_SIZE - index }}
-                  >
-                    <img
-                      src={imageUrl}
-                      alt={`Showcase ${index + 1}`}
-                      className="w-full h-full object-cover"
-                      loading={index < 2 ? "eager" : "lazy"} 
-                    />
-                  </div>
-                ))}
-              </div>
+          <div className="w-full md:w-1/2 h-[50vh] md:h-screen flex items-center justify-center md:justify-start z-10 p-4 md:p-0">
+            {imagesLoaded && introComplete ? (
+              <ImageStack 
+                imageUrls={allThemeImages}
+                introComplete={introComplete}
+                isReady={imagesLoaded}
+                parallaxMouseTargetRef={heroSectionRef}
+              />
             ) : (
               <div className="w-full h-full flex justify-center items-center">
                 <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-red-500"></div>
@@ -630,18 +412,18 @@ const Hero: React.FC<HeroProps> = ({ themes, introComplete, onNavClick }) => {
           
           <div ref={decorativeBlob1Ref} className="absolute top-1/4 left-1/4 w-72 h-72 md:w-96 md:h-96 bg-red-700/30 rounded-full filter blur-[100px] md:blur-[150px] opacity-0 z-0"></div>
           <div ref={decorativeBlob2Ref} className="absolute bottom-1/4 right-1/4 w-72 h-72 md:w-96 md:h-96 bg-gray-600/20 rounded-full filter blur-[100px] md:blur-[150px] opacity-0 z-0"></div>
-
-        
         </section>
-
-     
        <HorizontalScroll />
-         <MarqueeSection />
+       <MarqueeSection />
       </div>
-              <VerticalNavigation 
+        <VerticalNavigation 
           currentSection={currentSection} 
           onNavigate={handleVerticalNavClick} 
           themes={navigationThemes} 
+          horizontalProgress={horizontalProgress}
+          isInHorizontalSection={isInHorizontalSection}
+          navigationConfig={navigationConfig}
+          overallPageScrollProgress={overallPageScrollProgress}
         />
     </>
   );
