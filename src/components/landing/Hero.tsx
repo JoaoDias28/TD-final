@@ -119,7 +119,7 @@ const Hero: React.FC<HeroProps> = ({ themes: propThemes, introComplete, onNavCli
     Promise.all(imagePromises).then(() => { if(isMounted) setImagesLoaded(true); });
     const timeoutId = setTimeout(() => { if (!imagesLoaded && isMounted) setImagesLoaded(true); }, 5000); 
     return () => { isMounted = false; clearTimeout(timeoutId); };
-  }, [allThemeImages, imagesLoaded]);
+  }, [allThemeImages]);
 
   useGSAP(
     () => {

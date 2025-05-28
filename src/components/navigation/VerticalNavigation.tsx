@@ -27,7 +27,22 @@ const calculateThemeSectionCompletion = (
   horizontalProgress: VerticalNavProps['horizontalProgress']
 ): number => {
   const themeIdFromNav = parseInt(currentNavItemId.replace('theme-', ''));
+
+  // Guard against NaN from parseInt if currentNavItemId is not in the expected format
+  if (isNaN(themeIdFromNav)) {
+    console.warn(`Invalid theme ID encountered: ${currentNavItemId}`);
+    return 0; 
+  }
+
   const themeIndexInParentArray = themes.findIndex(t => t.id === themeIdFromNav);
+  
+  if (themeIndexInParentArray === -1) {
+    // This case means the themeIdFromNav (which is a valid number) doesn't exist in the themes array
+    // This could be a data mismatch or an outdated currentNavItemId.
+    // Depending on desired behavior, could return 0, log an error, or handle differently.
+    console.warn(`Theme with ID ${themeIdFromNav} not found in themes array.`);
+    return 0;
+  }
   
   if (themeIndexInParentArray === horizontalProgress.activePanel) {
     return horizontalProgress.progress * 100;
@@ -173,7 +188,7 @@ const VerticalNavigation: React.FC<VerticalNavProps> = ({
       duration: 0.3,
       ease: 'power2.out'
     });
-  }, [overallPageScrollProgress, isVisible, pathRef.current]); // pathRef.current to re-run if path becomes available
+  }, [overallPageScrollProgress, isVisible]); // pathRef.current to re-run if path becomes available
 
   const handleNavClick = (sectionId: string) => {
     onNavigate(sectionId);

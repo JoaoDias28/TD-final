@@ -42,7 +42,7 @@ interface ParallaxConfig {
 // NEW TYPE DEFINITIONS START HERE
 
 // Describes the animation properties for an image at a specific moment (e.g., initial, target, exit)
-interface AnimationState {
+export interface AnimationState {
   x: number | string;      // CSS transform: translateX()
   y: number | string;      // CSS transform: translateY()
   scale: number;
@@ -53,7 +53,7 @@ interface AnimationState {
 }
 
 // Configuration specific to a single breakpoint for a spread image
-interface BreakpointSpecificConfig {
+export interface BreakpointSpecificConfig {
   initial: AnimationState; // State before animation starts
   target: AnimationState;  // State when fully animated in / main state
   exit: AnimationState;    // State when animating out
@@ -64,7 +64,7 @@ interface BreakpointSpecificConfig {
 }
 
 // The main configuration object for a spread image, containing settings for each breakpoint
-interface ResponsiveParallaxConfig {
+export interface ResponsiveParallaxConfig {
   sm?: BreakpointSpecificConfig;
   md?: BreakpointSpecificConfig;
   lg?: BreakpointSpecificConfig;

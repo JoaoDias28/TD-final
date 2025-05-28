@@ -92,7 +92,7 @@ const ImageStack: React.FC<ImageStackProps> = ({
 
   const applyFloatingAnimations = useCallback((elementsToAnimate: (HTMLDivElement | null)[]) => {
     const validElements = elementsToAnimate.filter(Boolean) as HTMLDivElement[];
-    gsap.killTweensOf(validElements, "floating"); 
+    gsap.killTweensOf(validElements); 
 
     validElements.forEach((el) => {
       if (!el || !el.dataset.stackIndex) return;
